@@ -1,0 +1,14 @@
+package com.foodredistribution.entity;
+
+public enum NotificationType {
+    NEW_SURPLUS,
+    SUITABLE_RECEIVER_FOUND,
+    FOOD_RESERVED,
+    FOOD_ACCEPTED,
+    PICKUP_ASSIGNED,
+    VOLUNTEER_APPROACHING,
+    FOOD_COLLECTED,
+    FOOD_DELIVERED,
+    FOOD_EXPIRED,
+    PICKUP_CANCELLED
+}
