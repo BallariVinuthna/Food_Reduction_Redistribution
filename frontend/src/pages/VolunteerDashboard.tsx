@@ -8,10 +8,10 @@ import {
   MapPin,
   Phone,
   Navigation,
-  FileText,
-  Clock,
   ShieldCheck,
   AlertCircle,
+  KeyRound,
+  XCircle,
 } from 'lucide-react';
 
 export const VolunteerDashboard: React.FC = () => {
@@ -20,6 +20,19 @@ export const VolunteerDashboard: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [proofNotes, setProofNotes] = useState<Record<string, string>>({});
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  // OTP Verification Modal State
+  const [activeModal, setActiveModal] = useState<{
+    pickupId: string;
+    step: 'PICKUP_OTP' | 'DELIVERY_OTP' | 'CANCEL_REPORT';
+    targetStatus?: PickupStatus;
+    expectedQuantity?: number;
+    unit?: string;
+  } | null>(null);
+
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [actualQuantity, setActualQuantity] = useState<number>(0);
+  const [failureReason, setFailureReason] = useState('');
 
   const fetchPickups = async () => {
     try {
@@ -36,23 +49,83 @@ export const VolunteerDashboard: React.FC = () => {
     fetchPickups();
   }, []);
 
-  const handleUpdateStatus = async (pickupId: string, nextStatus: PickupStatus) => {
+  const handleOpenOtpModal = (pickup: PickupAssignment, step: 'PICKUP_OTP' | 'DELIVERY_OTP') => {
+    setActiveModal({
+      pickupId: pickup.id,
+      step,
+      targetStatus: step === 'PICKUP_OTP' ? 'COLLECTED' : 'DELIVERED',
+      expectedQuantity: pickup.quantity,
+      unit: pickup.unit,
+    });
+    setEnteredOtp('');
+    setActualQuantity(pickup.quantity);
+  };
+
+  const handleOpenCancelModal = (pickup: PickupAssignment) => {
+    setActiveModal({
+      pickupId: pickup.id,
+      step: 'CANCEL_REPORT',
+      expectedQuantity: pickup.quantity,
+      unit: pickup.unit,
+    });
+    setFailureReason('');
+  };
+
+  const handleSubmitModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeModal) return;
+
+    setActionLoading(activeModal.pickupId);
+    try {
+      if (activeModal.step === 'PICKUP_OTP') {
+        const notes = proofNotes[activeModal.pickupId] || 'Physical temperature & packaging safety verified at provider.';
+        await api.updatePickupStatus(activeModal.pickupId, {
+          status: 'COLLECTED',
+          otp: enteredOtp,
+          actualQuantity: actualQuantity || activeModal.expectedQuantity,
+          proofNotes: notes,
+        });
+        setSuccessBanner('Pickup OTP verified! Food collected and securely locked in transit.');
+      } else if (activeModal.step === 'DELIVERY_OTP') {
+        const notes = proofNotes[activeModal.pickupId] || 'Delivered to NGO kitchen. Verified with recipient OTP.';
+        await api.updatePickupStatus(activeModal.pickupId, {
+          status: 'DELIVERED',
+          otp: enteredOtp,
+          actualQuantity: actualQuantity || activeModal.expectedQuantity,
+          proofNotes: notes,
+        });
+        setSuccessBanner('🎉 Delivery OTP Verified! Handover complete. Persistent audit transaction closed.');
+      } else if (activeModal.step === 'CANCEL_REPORT') {
+        await api.updatePickupStatus(activeModal.pickupId, {
+          status: 'FAILED',
+          failedReason: failureReason || 'Handover aborted at site',
+          cancellationReason: failureReason,
+          proofNotes: `Handover failure recorded: ${failureReason}`,
+        });
+        setSuccessBanner('Handover exception recorded in immutable audit log.');
+      }
+
+      setActiveModal(null);
+      await fetchPickups();
+      setTimeout(() => setSuccessBanner(null), 6000);
+    } catch (err: any) {
+      alert(err.message || 'Operation failed. Verify OTP code.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSimpleStatusAdvance = async (pickupId: string, nextStatus: PickupStatus) => {
     setActionLoading(pickupId);
     try {
-      const notes = proofNotes[pickupId] || 'Transit verified and compliant with food safety window.';
+      const notes = proofNotes[pickupId] || 'Transit checkpoint confirmed.';
       await api.updatePickupStatus(pickupId, {
         status: nextStatus,
         proofNotes: notes,
       });
-
-      if (nextStatus === 'DELIVERED') {
-        setSuccessBanner('🎉 Delivery Completed! Surplus food safely redistributed and impact metrics updated.');
-      } else {
-        setSuccessBanner(`Pickup status updated to ${nextStatus}. Notifications dispatched.`);
-      }
-
+      setSuccessBanner(`Transit status updated to ${nextStatus}.`);
       await fetchPickups();
-      setTimeout(() => setSuccessBanner(null), 6000);
+      setTimeout(() => setSuccessBanner(null), 5000);
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
     } finally {
@@ -70,7 +143,7 @@ export const VolunteerDashboard: React.FC = () => {
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Vikram Sharma (Volunteer Hub)</h1>
           <p className="text-xs text-teal-200 mt-1">
-            Active Hyderabad Collection Partner • Vehicle: Two-Wheeler / Insulated Bag
+            Active Hyderabad Collection Partner • Two-Factor Handover Verification (OTPs)
           </p>
         </div>
 
@@ -100,53 +173,52 @@ export const VolunteerDashboard: React.FC = () => {
         </h2>
 
         {loading ? (
-          <div className="text-center py-12 text-xs text-slate-400">Loading pickup assignments...</div>
+          <div className="text-center py-12 text-slate-500 text-sm">Loading assigned transit routes...</div>
         ) : pickups.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs">
-            <Truck className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            <p className="font-semibold text-slate-800">No pickup tasks assigned yet</p>
-            <p className="text-[11px] text-slate-400 mt-1">
-              When an NGO accepts surplus food, assignments will appear here with pickup and delivery addresses.
-            </p>
+          <div className="p-8 rounded-3xl bg-white border border-slate-200 text-center text-slate-500 text-sm">
+            No active pickups assigned. New matching routes will appear here automatically.
           </div>
         ) : (
           pickups.map((p) => {
             const isCompleted = p.status === 'DELIVERED';
+            const isFailed = p.status === 'FAILED';
+
             return (
               <div
                 key={p.id}
-                className={`p-6 rounded-3xl border transition-all ${
-                  isCompleted
-                    ? 'bg-slate-50 border-slate-200'
-                    : 'bg-white border-emerald-300 shadow-md ring-1 ring-emerald-200'
-                }`}
+                className={`p-6 rounded-3xl bg-white border ${
+                  isCompleted ? 'border-emerald-200 shadow-2xs' : isFailed ? 'border-red-200 bg-red-50/20' : 'border-slate-200 shadow-md'
+                } space-y-4 transition-all`}
               >
-                {/* Header & Status */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                {/* Top Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      Surplus Redistribution Order
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                      Assignment ID: {p.id.substring(0, 8)}...
                     </span>
-                    <h3 className="text-lg font-bold text-slate-900 mt-1">
-                      {p.foodName} • <span className="text-emerald-700 font-extrabold">{p.quantity} {p.unit}</span>
-                    </h3>
+                    <h3 className="text-base font-bold text-slate-900">{p.foodName}</h3>
+                    <p className="text-xs text-slate-500">
+                      Quantity: <strong className="text-slate-800">{p.quantity} {p.unit}</strong>
+                    </p>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${
-                    p.status === 'DELIVERED'
-                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                      : p.status === 'COLLECTED'
-                      ? 'bg-teal-100 text-teal-800 border-teal-300'
-                      : 'bg-amber-100 text-amber-800 border-amber-300'
-                  }`}>
+                  <span
+                    className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold ${
+                      isCompleted
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : isFailed
+                        ? 'bg-red-100 text-red-800'
+                        : p.status === 'COLLECTED'
+                        ? 'bg-teal-100 text-teal-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
                     {p.status}
                   </span>
                 </div>
 
-                {/* Visual Lifecycle Progression Tracker */}
-                <div className="my-4">
-                  <TimelineTracker currentStatus={p.status === 'DELIVERED' ? 'REDISTRIBUTED' : p.status === 'COLLECTED' ? 'COLLECTED' : 'PICKUP_ASSIGNED'} />
-                </div>
+                {/* Stepper Timeline */}
+                <TimelineTracker currentStatus={p.status} />
 
                 {/* Pickup & Delivery Location Addresses */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-200 text-xs">
@@ -188,22 +260,22 @@ export const VolunteerDashboard: React.FC = () => {
                 </div>
 
                 {/* Status Advancement Workflow Buttons */}
-                {!isCompleted ? (
+                {!isCompleted && !isFailed ? (
                   <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <div className="flex-1 max-w-md">
                       <input
                         type="text"
-                        placeholder="Handover verification notes (e.g. food temperature verified, containers sealed)"
+                        placeholder="Handover notes (e.g. food temperature verified, containers sealed)"
                         value={proofNotes[p.id] || ''}
                         onChange={(e) => setProofNotes({ ...proofNotes, [p.id]: e.target.value })}
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {p.status === 'ASSIGNED' && (
                         <button
-                          onClick={() => handleUpdateStatus(p.id, 'EN_ROUTE')}
+                          onClick={() => handleSimpleStatusAdvance(p.id, 'EN_ROUTE')}
                           disabled={actionLoading === p.id}
                           className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
@@ -214,7 +286,7 @@ export const VolunteerDashboard: React.FC = () => {
 
                       {p.status === 'EN_ROUTE' && (
                         <button
-                          onClick={() => handleUpdateStatus(p.id, 'ARRIVED')}
+                          onClick={() => handleSimpleStatusAdvance(p.id, 'ARRIVED')}
                           disabled={actionLoading === p.id}
                           className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
@@ -225,31 +297,45 @@ export const VolunteerDashboard: React.FC = () => {
 
                       {p.status === 'ARRIVED' && (
                         <button
-                          onClick={() => handleUpdateStatus(p.id, 'COLLECTED')}
+                          onClick={() => handleOpenOtpModal(p, 'PICKUP_OTP')}
                           disabled={actionLoading === p.id}
                           className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>Confirm Food Collected</span>
+                          <KeyRound className="w-4 h-4" />
+                          <span>Enter Pickup OTP</span>
                         </button>
                       )}
 
                       {p.status === 'COLLECTED' && (
                         <button
-                          onClick={() => handleUpdateStatus(p.id, 'DELIVERED')}
+                          onClick={() => handleOpenOtpModal(p, 'DELIVERY_OTP')}
                           disabled={actionLoading === p.id}
                           className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                         >
                           <CheckCircle2 className="w-4 h-4 text-lime-300" />
-                          <span>Confirm Safely Delivered & Redistributed</span>
+                          <span>Verify Delivery OTP</span>
                         </button>
                       )}
+
+                      <button
+                        onClick={() => handleOpenCancelModal(p)}
+                        disabled={actionLoading === p.id}
+                        className="px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Report Exception</span>
+                      </button>
                     </div>
                   </div>
-                ) : (
+                ) : isCompleted ? (
                   <div className="pt-2 flex items-center gap-2 text-xs text-emerald-800 font-semibold">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Redistribution verified and completed. Logged to system audit trail.</span>
+                    <span>Redistribution verified with double OTP authentication and logged to system audit trail.</span>
+                  </div>
+                ) : (
+                  <div className="pt-2 flex items-center gap-2 text-xs text-red-800 font-semibold">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <span>Handover marked as failed / cancelled. Reason logged in audit records.</span>
                   </div>
                 )}
               </div>
@@ -257,6 +343,96 @@ export const VolunteerDashboard: React.FC = () => {
           })
         )}
       </div>
+
+      {/* OTP Verification & Exception Modal */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-emerald-700" />
+              <h3 className="text-base font-bold text-slate-900">
+                {activeModal.step === 'PICKUP_OTP'
+                  ? 'Verify Food Pickup Handover'
+                  : activeModal.step === 'DELIVERY_OTP'
+                  ? 'Verify Recipient Delivery Handover'
+                  : 'Report Transit / Handover Exception'}
+              </h3>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              {activeModal.step === 'PICKUP_OTP'
+                ? 'Ask the kitchen provider for the 6-digit Pickup OTP shown on their dashboard.'
+                : activeModal.step === 'DELIVERY_OTP'
+                ? 'Ask the NGO receiver for the 6-digit Delivery OTP shown on their dashboard.'
+                : 'State the specific operational reason why this handover could not be completed.'}
+            </p>
+
+            <form onSubmit={handleSubmitModal} className="space-y-4">
+              {activeModal.step !== 'CANCEL_REPORT' ? (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700">6-Digit Verification PIN (OTP)</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      placeholder="e.g. 582914"
+                      value={enteredOtp}
+                      onChange={(e) => setEnteredOtp(e.target.value.trim())}
+                      className="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2.5 text-center font-mono text-lg font-bold tracking-widest text-slate-900 focus:outline-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700">Actual Handed Over Quantity ({activeModal.unit})</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      value={actualQuantity}
+                      onChange={(e) => setActualQuantity(Number(e.target.value))}
+                      className="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-emerald-500"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">Exception Reason</label>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="e.g. Receiver facility closed, temperature exceeded safe limit, recipient capacity full..."
+                    value={failureReason}
+                    onChange={(e) => setFailureReason(e.target.value)}
+                    className="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-red-500"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="px-4 py-2 rounded-xl text-slate-600 text-xs font-semibold hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading !== null}
+                  className={`px-4 py-2 rounded-xl text-white text-xs font-bold cursor-pointer ${
+                    activeModal.step === 'CANCEL_REPORT'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-emerald-700 hover:bg-emerald-800'
+                  }`}
+                >
+                  {activeModal.step === 'CANCEL_REPORT' ? 'Confirm Exception' : 'Verify Handover'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

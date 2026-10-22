@@ -18,9 +18,21 @@ import java.util.UUID;
 public class FoodListingController {
 
     private final FoodListingService foodListingService;
+    private final com.foodredistribution.service.MatchingService matchingService;
 
-    public FoodListingController(FoodListingService foodListingService) {
+    public FoodListingController(FoodListingService foodListingService, com.foodredistribution.service.MatchingService matchingService) {
         this.foodListingService = foodListingService;
+        this.matchingService = matchingService;
+    }
+
+    @PostMapping("/{id}/claim")
+    public ResponseEntity<ApiResponse<com.foodredistribution.dto.MatchDto>> claimListing(
+            @PathVariable UUID id,
+            @RequestBody(required = false) java.util.Map<String, Object> req,
+            Authentication authentication) {
+        String userEmail = authentication != null ? authentication.getName() : "receiver@demo.local";
+        com.foodredistribution.dto.MatchDto match = matchingService.claimListing(id, req, userEmail);
+        return ResponseEntity.ok(ApiResponse.ok("Surplus food successfully claimed and assigned", match));
     }
 
     @PostMapping

@@ -29,6 +29,12 @@ public class MatchDto {
     private LocalDateTime proposedAt;
     private LocalDateTime respondedAt;
     private String responseNotes;
+    private UUID attemptId;
+    private Double requestedQuantity;
+    private Double allocatedQuantity;
+    private boolean isSplitAllocation;
+    private Integer splitBatchNumber;
+    private Long executionTimeMs;
 
     public MatchDto() {}
 
@@ -103,4 +109,22 @@ public class MatchDto {
 
     public String getResponseNotes() { return responseNotes; }
     public void setResponseNotes(String responseNotes) { this.responseNotes = responseNotes; }
+
+    public UUID getAttemptId() { return attemptId; }
+    public void setAttemptId(UUID attemptId) { this.attemptId = attemptId; }
+
+    public Double getRequestedQuantity() { return requestedQuantity; }
+    public void setRequestedQuantity(Double requestedQuantity) { this.requestedQuantity = requestedQuantity; }
+
+    public Double getAllocatedQuantity() { return allocatedQuantity; }
+    public void setAllocatedQuantity(Double allocatedQuantity) { this.allocatedQuantity = allocatedQuantity; }
+
+    public boolean isSplitAllocation() { return isSplitAllocation; }
+    public void setSplitAllocation(boolean splitAllocation) { isSplitAllocation = splitAllocation; }
+
+    public Integer getSplitBatchNumber() { return splitBatchNumber; }
+    public void setSplitBatchNumber(Integer splitBatchNumber) { this.splitBatchNumber = splitBatchNumber; }
+
+    public Long getExecutionTimeMs() { return executionTimeMs; }
+    public void setExecutionTimeMs(Long executionTimeMs) { this.executionTimeMs = executionTimeMs; }
 }

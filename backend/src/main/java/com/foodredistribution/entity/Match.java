@@ -40,6 +40,13 @@ public class Match {
     @Column(nullable = false)
     private MatchStatus status = MatchStatus.PROPOSED;
 
+    private UUID attemptId;
+    private Double requestedQuantity;
+    private Double allocatedQuantity;
+    private boolean isSplitAllocation = false;
+    private Integer splitBatchNumber = 1;
+    private Long executionTimeMs;
+
     @Column(name = "proposed_at", nullable = false)
     private LocalDateTime proposedAt = LocalDateTime.now();
 
@@ -110,6 +117,24 @@ public class Match {
 
     public LocalDateTime getRespondedAt() { return respondedAt; }
     public void setRespondedAt(LocalDateTime respondedAt) { this.respondedAt = respondedAt; }
+
+    public UUID getAttemptId() { return attemptId; }
+    public void setAttemptId(UUID attemptId) { this.attemptId = attemptId; }
+
+    public Double getRequestedQuantity() { return requestedQuantity; }
+    public void setRequestedQuantity(Double requestedQuantity) { this.requestedQuantity = requestedQuantity; }
+
+    public Double getAllocatedQuantity() { return allocatedQuantity; }
+    public void setAllocatedQuantity(Double allocatedQuantity) { this.allocatedQuantity = allocatedQuantity; }
+
+    public boolean isSplitAllocation() { return isSplitAllocation; }
+    public void setSplitAllocation(boolean splitAllocation) { isSplitAllocation = splitAllocation; }
+
+    public Integer getSplitBatchNumber() { return splitBatchNumber; }
+    public void setSplitBatchNumber(Integer splitBatchNumber) { this.splitBatchNumber = splitBatchNumber; }
+
+    public Long getExecutionTimeMs() { return executionTimeMs; }
+    public void setExecutionTimeMs(Long executionTimeMs) { this.executionTimeMs = executionTimeMs; }
 
     public String getResponseNotes() { return responseNotes; }
     public void setResponseNotes(String responseNotes) { this.responseNotes = responseNotes; }

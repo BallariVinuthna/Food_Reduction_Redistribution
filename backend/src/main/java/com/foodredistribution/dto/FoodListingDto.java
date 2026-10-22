@@ -11,7 +11,10 @@ public class FoodListingDto {
     private String providerOrganizationName;
     private String foodName;
     private String foodCategory;
+    private Long version;
     private Double quantity;
+    private Double reservedQuantity;
+    private Double remainingQuantity;
     private String unit;
     private LocalDateTime preparationTime;
     private LocalDateTime availableFrom;
@@ -112,4 +115,13 @@ public class FoodListingDto {
 
     public FoodSafetyCheckDto getSafetyCheck() { return safetyCheck; }
     public void setSafetyCheck(FoodSafetyCheckDto safetyCheck) { this.safetyCheck = safetyCheck; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+
+    public Double getReservedQuantity() { return reservedQuantity; }
+    public void setReservedQuantity(Double reservedQuantity) { this.reservedQuantity = reservedQuantity; }
+
+    public Double getRemainingQuantity() { return remainingQuantity; }
+    public void setRemainingQuantity(Double remainingQuantity) { this.remainingQuantity = remainingQuantity; }
 }

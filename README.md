@@ -58,17 +58,41 @@ The system operates across **Restaurants, Hotels, Hostels, College Canteens, Cor
 ### Backend (Java Full-Stack)
 - **Java 21 / Spring Boot 3.3.4:** Clean layered architecture (`Controller` $\to$ `Service` $\to$ `Repository` $\to$ `Entity`).
 - **Spring Security & JJWT 0.12.6:** Stateless JWT authentication with BCrypt password hashing.
-- **Spring Data JPA & PostgreSQL:** Full relational schema with indexes, transactions, and audit trails.
-- **Multi-Criteria Decision Analysis (MCDA) Engine:** Haversine spatial calculations, quantity fit, urgency decay weighting, dietary compatibility, and reliability scoring.
+- **MySQL 8.4 Standardization:** Standardized on MySQL 8.4 (InnoDB, UTF-8 MB4) with Flyway migrations (`V1__schema.sql`).
+- **Durable Donation Transactions:** Concurrency control (`@Version` optimistic locking) prevents double reservations; double OTP handovers (Pickup OTP + Delivery OTP).
+- **Multi-Criteria Decision Analysis (MCDA) Engine:** Haversine spatial calculations, dynamic urgency decay weighting, capacity headroom, and split-lot allocation.
+- **Database-Backed Analytics:** Strictly zero hardcoded latency/delivery constants; returns "No data yet" when empty; date-range/locality/category filters; CSV downloads.
+- **Empirical Field Waste Audits:** Physical scale logs kept strictly distinct from simulation runs and demo data.
 - **WebSocket STOMP:** Real-time push updates for listings, matches, and transit status.
 - **Automated Expiration Scheduler:** Periodic `@Scheduled` background worker transitioning elapsed surplus items.
+- **AI Food Image Checker Service:** Multipart image inspection with format/size validation (JPEG/PNG/WEBP, ≤10MB), Cloudinary cloud storage with local disk fallback, OpenAI Vision GPT-4o-mini integration with domain heuristic fallback, and advisory safety disclaimer.
+- **AI Assistant Chatbot Engine:** Real-time conversational assistant for food safety rules, OTP verification protocols, donation workflows, and operations.
 
 ### Frontend (Modern Environmental UI/UX)
 - **React 19 + TypeScript + Vite:** Modular component hierarchy.
-- **Environmental Design System:** Tailwind CSS tokens (Deep Emerald, Forest, Fresh Lime, Teal).
+- **Environmental Design System:** Tailwind CSS tokens (`#032C20` Deep Forest, `#087B46` Primary Green, `#8BE34B` Bright Lime, `#F6F8F7` Clean Slate).
 - **Interactive OpenStreetMap (Leaflet):** Geocoded donor, receiver, and volunteer nodes across Hyderabad.
+- **AI Food Image Checker Component:** Integrated fast-track in Create Donation wizard supporting drag-and-drop, camera capture, progress animation, confidence scoring, visual checks, and donor confirmation before form pre-filling.
+- **Floating AI Chatbot Widget:** Global floating assistant with pre-populated prompt chips, conversation memory, and immediate answers to food safety and operational doubts.
 - **Surplus Creation Wizard:** 5-step flow with mandatory Food Safety Checklist.
+- **Handover Verification Modals:** Volunteer OTP input for collection & delivery handovers.
+- **Preserved Benchmark History:** Run selector to browse historical `SIM-...` benchmark executions without losing data.
 - **1-Click Demo Persona Switcher:** Instant role switching for evaluation.
+
+---
+
+### Environment Variables & AI Configuration
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `OPENAI_API_KEY` | OpenAI API key for Vision analysis & Chatbot | Configured via `.env` / `application.yml` |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary Product Environment | `pfyvtc1h` |
+| `CLOUDINARY_API_KEY` | Cloudinary Key | `864858557272116` |
+| `CLOUDINARY_UPLOAD_PRESET`| Cloudinary Preset Name | `food` |
+| `JWT_SECRET` | 256-bit HMAC secret for authentication | Auto-configured in `.env` |
+
+> **Food Safety Advisory Disclaimer:**  
+> AI visual analysis provides preliminary advisory categorization and does not certify microbiological safety. Harmful bacteria, toxins, and internal holding temperatures cannot be verified from a photograph. Donors must independently confirm hot holding (>60°C) or cold storage (<5°C) compliance before publishing.
 
 ---
 

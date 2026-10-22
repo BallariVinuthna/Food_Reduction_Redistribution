@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 
@@ -74,6 +75,18 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"success\":false,\"message\":\"Authentication required or session expired. Please log in again.\",\"data\":null}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("{\"success\":false,\"message\":\"Access denied. Insufficient permissions.\",\"data\":null}");
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
@@ -81,11 +94,25 @@ public class SecurityConfig {
                         .requestMatchers("/api/analytics/**").permitAll()
                         .requestMatchers("/api/baseline/**").permitAll()
                         .requestMatchers("/api/prototype-tests/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
+                        .requestMatchers("/api/uploads/**").permitAll()
+                        .requestMatchers("/api/prediction/**").permitAll()
+                        .requestMatchers("/api/demand/**").permitAll()
+                        .requestMatchers("/api/waste-diary/**").permitAll()
+                        .requestMatchers("/api/qr/**").permitAll()
+                        .requestMatchers("/api/routes/**").permitAll()
+                        .requestMatchers("/api/rescue-priority/**").permitAll()
+                        .requestMatchers("/api/donors/**").permitAll()
+                        .requestMatchers("/api/urgency/**").permitAll()
+                        .requestMatchers("/api/experiments/**").permitAll()
+                        .requestMatchers("/api/ledger/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/food-listings/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/food-listings/*/claim").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/receivers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/matching/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/pickups/**").permitAll()
+                        .requestMatchers("/api/matching/**").permitAll()
+                        .requestMatchers("/api/pickups/**").permitAll()
+                        .requestMatchers("/api/transactions/**").permitAll()
                         // Any other request must be authenticated
                         .anyRequest().authenticated()
                 );

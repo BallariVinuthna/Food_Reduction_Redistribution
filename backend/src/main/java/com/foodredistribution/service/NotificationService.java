@@ -21,13 +21,16 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ExternalNotificationService externalNotificationService;
 
     public NotificationService(NotificationRepository notificationRepository,
                                UserRepository userRepository,
-                               SimpMessagingTemplate messagingTemplate) {
+                               SimpMessagingTemplate messagingTemplate,
+                               ExternalNotificationService externalNotificationService) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.messagingTemplate = messagingTemplate;
+        this.externalNotificationService = externalNotificationService;
     }
 
     @Transactional
@@ -41,6 +44,20 @@ public class NotificationService {
         try {
             messagingTemplate.convertAndSend("/topic/notifications/" + recipient.getId(), dto);
             messagingTemplate.convertAndSend("/topic/notifications/broadcast", dto);
+        } catch (Exception ignored) {}
+
+        // Dispatch via Resend Email and Twilio SMS
+        try {
+            if (recipient != null && recipient.getEmail() != null && !recipient.getEmail().endsWith(".local")) {
+                externalNotificationService.sendEmail(
+                        recipient.getEmail(),
+                        title + " - SurplusFlow",
+                        "<div style='font-family:sans-serif;padding:16px;'><h3>" + title + "</h3><p>" + message + "</p></div>"
+                );
+            }
+            if (recipient != null && recipient.getPhone() != null && !recipient.getPhone().isBlank()) {
+                externalNotificationService.sendSms(recipient.getPhone(), title + ": " + message);
+            }
         } catch (Exception ignored) {}
 
         return dto;

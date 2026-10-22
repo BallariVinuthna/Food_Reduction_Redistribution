@@ -47,6 +47,13 @@ public class Receiver {
 
     private Integer totalReceivedMeals = 0;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VerificationStatus verificationStatus = VerificationStatus.VERIFIED;
+
+    private LocalDateTime verifiedAt = LocalDateTime.now();
+    private String verifiedBy = "SYSTEM";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -110,6 +117,15 @@ public class Receiver {
 
     public Integer getTotalReceivedMeals() { return totalReceivedMeals; }
     public void setTotalReceivedMeals(Integer totalReceivedMeals) { this.totalReceivedMeals = totalReceivedMeals; }
+
+    public VerificationStatus getVerificationStatus() { return verificationStatus; }
+    public void setVerificationStatus(VerificationStatus verificationStatus) { this.verificationStatus = verificationStatus; }
+
+    public LocalDateTime getVerifiedAt() { return verifiedAt; }
+    public void setVerifiedAt(LocalDateTime verifiedAt) { this.verifiedAt = verifiedAt; }
+
+    public String getVerifiedBy() { return verifiedBy; }
+    public void setVerifiedBy(String verifiedBy) { this.verifiedBy = verifiedBy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

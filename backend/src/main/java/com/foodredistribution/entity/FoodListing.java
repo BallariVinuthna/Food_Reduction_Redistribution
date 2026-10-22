@@ -29,8 +29,18 @@ public class FoodListing {
     @Column(nullable = false)
     private String foodCategory; // COOKED_MEALS, BAKERY_BREAD, PACKAGED_GROCERIES, FRESH_PRODUCE, DAIRY, BEVERAGES
 
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @Column(nullable = false)
     private Double quantity;
+
+    @Column(name = "reserved_quantity", nullable = false)
+    private Double reservedQuantity = 0.0;
+
+    @Column(name = "remaining_quantity", nullable = false)
+    private Double remainingQuantity = 0.0;
 
     @Column(nullable = false)
     private String unit = "MEALS"; // MEALS, KG, PACKETS
@@ -106,14 +116,30 @@ public class FoodListing {
         this.photoUrl = photoUrl;
         this.contactPhone = contactPhone;
         this.status = FoodStatus.AVAILABLE;
+        this.reservedQuantity = 0.0;
+        this.remainingQuantity = quantity != null ? quantity : 0.0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         recalculateUrgency();
     }
 
     @PrePersist
+    public void onPrePersist() {
+        if (this.reservedQuantity == null) this.reservedQuantity = 0.0;
+        if (this.remainingQuantity == null) {
+            this.remainingQuantity = Math.max(0.0, (quantity != null ? quantity : 0.0) - this.reservedQuantity);
+        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        recalculateUrgency();
+    }
+
     @PreUpdate
     public void onUpdate() {
+        if (this.reservedQuantity == null) this.reservedQuantity = 0.0;
+        if (this.remainingQuantity == null) {
+            this.remainingQuantity = Math.max(0.0, (quantity != null ? quantity : 0.0) - this.reservedQuantity);
+        }
         this.updatedAt = LocalDateTime.now();
         recalculateUrgency();
     }
@@ -209,6 +235,46 @@ public class FoodListing {
 
     public Long getAvailableMinutesRemaining() { return availableMinutesRemaining; }
     public void setAvailableMinutesRemaining(Long availableMinutesRemaining) { this.availableMinutesRemaining = availableMinutesRemaining; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+
+    public Double getReservedQuantity() { return reservedQuantity != null ? reservedQuantity : 0.0; }
+    public void setReservedQuantity(Double reservedQuantity) {
+        this.reservedQuantity = reservedQuantity != null ? reservedQuantity : 0.0;
+        this.remainingQuantity = Math.max(0.0, (quantity != null ? quantity : 0.0) - this.reservedQuantity);
+    }
+
+    public Double getRemainingQuantity() {
+        if (remainingQuantity == null) {
+            remainingQuantity = Math.max(0.0, (quantity != null ? quantity : 0.0) - (reservedQuantity != null ? reservedQuantity : 0.0));
+        }
+        return remainingQuantity;
+    }
+    public void setRemainingQuantity(Double remainingQuantity) { this.remainingQuantity = remainingQuantity; }
+
+    public synchronized boolean reserveQuantity(double amount) {
+        if (amount <= 0.0) return false;
+        double currentRemaining = getRemainingQuantity();
+        if (currentRemaining >= amount) {
+            this.reservedQuantity = (this.reservedQuantity != null ? this.reservedQuantity : 0.0) + amount;
+            this.remainingQuantity = Math.max(0.0, this.quantity - this.reservedQuantity);
+            if (this.remainingQuantity <= 0.001) {
+                this.status = FoodStatus.RESERVED;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public synchronized void releaseQuantity(double amount) {
+        if (amount <= 0.0) return;
+        this.reservedQuantity = Math.max(0.0, (this.reservedQuantity != null ? this.reservedQuantity : 0.0) - amount);
+        this.remainingQuantity = Math.max(0.0, this.quantity - this.reservedQuantity);
+        if (this.remainingQuantity > 0.0 && this.status == FoodStatus.RESERVED) {
+            this.status = FoodStatus.AVAILABLE;
+        }
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -30,6 +30,9 @@ public class MatchingEngine {
         private final double reliabilityScore;
         private final double distanceKm;
         private final int estimatedPickupMinutes;
+        private double allocatedQuantity;
+        private boolean isSplitAllocation = false;
+        private int splitBatchNumber = 1;
 
         public MatchCandidate(Receiver receiver, double totalScore, double locationScore, double quantityScore,
                               double urgencyScore, double foodTypeScore, double capacityScore, double reliabilityScore,
@@ -44,6 +47,7 @@ public class MatchingEngine {
             this.reliabilityScore = reliabilityScore;
             this.distanceKm = distanceKm;
             this.estimatedPickupMinutes = estimatedPickupMinutes;
+            this.allocatedQuantity = receiver != null && receiver.getCapacityMeals() != null ? receiver.getCapacityMeals() : 0.0;
         }
 
         public Receiver getReceiver() { return receiver; }
@@ -56,6 +60,12 @@ public class MatchingEngine {
         public double getReliabilityScore() { return reliabilityScore; }
         public double getDistanceKm() { return distanceKm; }
         public int getEstimatedPickupMinutes() { return estimatedPickupMinutes; }
+        public double getAllocatedQuantity() { return allocatedQuantity; }
+        public void setAllocatedQuantity(double allocatedQuantity) { this.allocatedQuantity = allocatedQuantity; }
+        public boolean isSplitAllocation() { return isSplitAllocation; }
+        public void setSplitAllocation(boolean splitAllocation) { isSplitAllocation = splitAllocation; }
+        public int getSplitBatchNumber() { return splitBatchNumber; }
+        public void setSplitBatchNumber(int splitBatchNumber) { this.splitBatchNumber = splitBatchNumber; }
     }
 
     public List<MatchCandidate> findRankedMatches(FoodListing listing, List<Receiver> potentialReceivers) {
@@ -83,7 +93,6 @@ public class MatchingEngine {
                 foodTypeScore = 0.0; // Incompatible
             }
 
-            // Skip completely incompatible
             if (foodTypeScore == 0.0) {
                 continue;
             }
@@ -102,24 +111,23 @@ public class MatchingEngine {
             double locationScore = Math.max(0.0, 100.0 * (1.0 - (distanceKm / maxRadiusKm)));
 
             // Quantity & Capacity Fit
-            double quantity = listing.getQuantity();
-            double capacity = receiver.getCapacityMeals();
+            double quantity = listing.getRemainingQuantity() != null && listing.getRemainingQuantity() > 0
+                    ? listing.getRemainingQuantity()
+                    : listing.getQuantity();
+            double capacity = receiver.getCapacityMeals() != null ? receiver.getCapacityMeals() : 0.0;
             double quantityScore;
             double capacityScore;
 
             if (capacity >= quantity) {
-                // Perfect capacity fit
                 quantityScore = 100.0;
-                // Capacity score: higher if capacity is close to avoid wasting a 500-meal capacity on a 10-meal donation
-                double ratio = quantity / capacity;
+                double ratio = capacity > 0 ? quantity / capacity : 1.0;
                 capacityScore = Math.min(100.0, 70.0 + (ratio * 30.0));
             } else {
-                // Partial capacity
                 quantityScore = Math.max(30.0, (capacity / quantity) * 80.0);
                 capacityScore = 50.0;
             }
 
-            // Urgency Suitability
+            // Expiry-Aware Urgency Suitability
             double urgencyScore = calculateUrgencyScore(listing, distanceKm);
 
             // Reliability Score
@@ -135,10 +143,10 @@ public class MatchingEngine {
 
             totalScore = Math.round(Math.min(100.0, Math.max(0.0, totalScore)) * 10.0) / 10.0;
 
-            // Estimated pickup travel time (approx 3-4 mins per km in Hyderabad + 10 mins buffer)
+            // Estimated pickup travel time
             int estimatedMinutes = (int) Math.round(distanceKm * 3.5 + 8.0);
 
-            candidates.add(new MatchCandidate(
+            MatchCandidate candidate = new MatchCandidate(
                     receiver,
                     totalScore,
                     Math.round(locationScore * 10.0) / 10.0,
@@ -149,12 +157,41 @@ public class MatchingEngine {
                     Math.round(reliabilityScore * 10.0) / 10.0,
                     Math.round(distanceKm * 10.0) / 10.0,
                     estimatedMinutes
-            ));
+            );
+            candidate.setAllocatedQuantity(Math.min(quantity, capacity));
+            candidates.add(candidate);
         }
 
-        // Rank by highest total match score descending
         candidates.sort(Comparator.comparingDouble(MatchCandidate::getTotalScore).reversed());
         return candidates;
+    }
+
+    /**
+     * Proposes a split allocation across multiple receivers when listing quantity exceeds single receiver capacity.
+     */
+    public List<MatchCandidate> findSplitAllocationMatches(FoodListing listing, List<Receiver> potentialReceivers) {
+        List<MatchCandidate> ranked = findRankedMatches(listing, potentialReceivers);
+        List<MatchCandidate> allocations = new ArrayList<>();
+
+        double remainingToAllocate = listing.getRemainingQuantity() != null && listing.getRemainingQuantity() > 0
+                ? listing.getRemainingQuantity()
+                : listing.getQuantity();
+
+        int batchNumber = 1;
+        for (MatchCandidate cand : ranked) {
+            if (remainingToAllocate <= 0) break;
+
+            double receiverCap = cand.getReceiver().getCapacityMeals() != null ? cand.getReceiver().getCapacityMeals() : 0.0;
+            double take = Math.min(remainingToAllocate, receiverCap);
+            if (take > 0) {
+                cand.setAllocatedQuantity(take);
+                cand.setSplitAllocation(true);
+                cand.setSplitBatchNumber(batchNumber++);
+                allocations.add(cand);
+                remainingToAllocate -= take;
+            }
+        }
+        return allocations;
     }
 
     private double calculateUrgencyScore(FoodListing listing, double distanceKm) {
@@ -164,12 +201,12 @@ public class MatchingEngine {
         }
 
         if (minutesRemaining <= 60) {
-            // Critical: heavily favor close receivers that can collect quickly
-            return Math.max(50.0, 100.0 - (distanceKm * 4.0));
+            // Critical urgency: heavily favor proximity so food is collected before expiry
+            return Math.max(40.0, 100.0 - (distanceKm * 4.5));
         } else if (minutesRemaining <= 120) {
-            return 85.0;
+            return Math.max(50.0, 90.0 - (distanceKm * 2.0));
         } else if (minutesRemaining <= 240) {
-            return 70.0;
+            return 75.0;
         } else {
             return 60.0;
         }

@@ -246,6 +246,29 @@ export const ProviderDashboard: React.FC = () => {
                 <TimelineTracker currentStatus={selectedListing.status} compact />
               </div>
 
+              {/* Active Pickup Assignment & OTP Disclosure Box */}
+              {(selectedListing.status === 'RESERVED' || selectedListing.status === 'ACCEPTED' || selectedListing.status === 'PICKUP_ASSIGNED') && (
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full">
+                      Volunteer Pickup Verification
+                    </span>
+                    <p className="text-xs text-amber-950 font-bold mt-1">
+                      Volunteer assigned for collection.
+                    </p>
+                    <p className="text-[11px] text-amber-800">
+                      Disclose this 6-digit OTP to the collection volunteer upon physical handover verification:
+                    </p>
+                  </div>
+                  <div className="p-2.5 px-4 rounded-xl bg-white border border-amber-300 text-center shrink-0 shadow-xs">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Pickup PIN (OTP)</span>
+                    <span className="font-mono text-xl font-extrabold text-emerald-800 tracking-wider">
+                      942185
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Ranked Matches List */}
               {matchingLoading ? (
                 <div className="py-8 text-center text-xs text-slate-500 animate-pulse">

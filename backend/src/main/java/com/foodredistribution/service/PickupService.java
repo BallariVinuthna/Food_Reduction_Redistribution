@@ -1,6 +1,7 @@
 package com.foodredistribution.service;
 
 import com.foodredistribution.dto.PickupAssignmentDto;
+import com.foodredistribution.dto.PickupEventDto;
 import com.foodredistribution.dto.UpdatePickupStatusRequest;
 import com.foodredistribution.entity.*;
 import com.foodredistribution.exception.BadRequestException;
@@ -24,6 +25,7 @@ public class PickupService {
     private final FoodProviderRepository foodProviderRepository;
     private final ReceiverRepository receiverRepository;
     private final VolunteerRepository volunteerRepository;
+    private final DonationTransactionRepository donationTransactionRepository;
     private final NotificationService notificationService;
     private final AnalyticsService analyticsService;
     private final AuditService auditService;
@@ -35,6 +37,7 @@ public class PickupService {
                          FoodProviderRepository foodProviderRepository,
                          ReceiverRepository receiverRepository,
                          VolunteerRepository volunteerRepository,
+                         DonationTransactionRepository donationTransactionRepository,
                          NotificationService notificationService,
                          AnalyticsService analyticsService,
                          AuditService auditService,
@@ -45,6 +48,7 @@ public class PickupService {
         this.foodProviderRepository = foodProviderRepository;
         this.receiverRepository = receiverRepository;
         this.volunteerRepository = volunteerRepository;
+        this.donationTransactionRepository = donationTransactionRepository;
         this.notificationService = notificationService;
         this.analyticsService = analyticsService;
         this.auditService = auditService;
@@ -84,6 +88,32 @@ public class PickupService {
         volunteer.setActivePickupsCount(volunteer.getActivePickupsCount() + 1);
         volunteerRepository.save(volunteer);
 
+        // Update corresponding donation transaction
+        List<DonationTransaction> txList = donationTransactionRepository.findByFoodListingId(pickup.getMatch().getFoodListing().getId());
+        for (DonationTransaction tx : txList) {
+            if (tx.getReceiver().getId().equals(pickup.getMatch().getReceiver().getId())) {
+                tx.setVolunteer(volunteer);
+                tx.setStatus(TransactionStatus.ASSIGNED);
+                tx.setAssignedAt(LocalDateTime.now());
+                donationTransactionRepository.save(tx);
+            }
+        }
+
+        // Record tracking event
+        PickupEvent event = new PickupEvent(
+                pickup,
+                "SYSTEM",
+                "ADMIN",
+                null,
+                PickupStatus.ASSIGNED,
+                pickup.getMatch().getFoodListing().getQuantity(),
+                "VOLUNTEER_ASSIGNMENT",
+                volunteer.getCurrentLatitude(),
+                volunteer.getCurrentLongitude(),
+                "Volunteer " + volunteer.getFullName() + " assigned to pickup"
+        );
+        pickupEventRepository.save(event);
+
         notificationService.createAndSend(
                 volunteer.getUser(),
                 "Pickup Task Assigned",
@@ -100,8 +130,8 @@ public class PickupService {
         PickupAssignment pickup = pickupAssignmentRepository.findById(pickupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pickup assignment not found: " + pickupId));
 
+        PickupStatus previousStatus = pickup.getStatus();
         PickupStatus newStatus = req.getStatus();
-        pickup.setStatus(newStatus);
         LocalDateTime now = LocalDateTime.now();
 
         FoodListing listing = pickup.getMatch().getFoodListing();
@@ -116,9 +146,27 @@ public class PickupService {
             pickup.setProofPhotoUrl(req.getProofPhotoUrl());
         }
 
+        String verificationMethod = "MANUAL_STATUS_UPDATE";
+        Double quantityRecorded = req.getActualQuantity() != null ? req.getActualQuantity() : listing.getQuantity();
+
+        // Find linked transaction
+        DonationTransaction linkedTx = null;
+        List<DonationTransaction> txs = donationTransactionRepository.findByFoodListingId(listing.getId());
+        for (DonationTransaction t : txs) {
+            if (t.getReceiver().getId().equals(receiver.getId())) {
+                linkedTx = t;
+                break;
+            }
+        }
+
         switch (newStatus) {
             case EN_ROUTE:
+                pickup.setStatus(PickupStatus.EN_ROUTE);
                 pickup.setEnRouteAt(now);
+                if (linkedTx != null) {
+                    linkedTx.setStatus(TransactionStatus.EN_ROUTE);
+                    linkedTx.setEnRouteAt(now);
+                }
                 if (provider.getUser() != null) {
                     notificationService.createAndSend(
                             provider.getUser(),
@@ -131,19 +179,43 @@ public class PickupService {
                 break;
 
             case ARRIVED:
+                pickup.setStatus(PickupStatus.ARRIVED);
                 pickup.setArrivedAt(now);
+                if (linkedTx != null) {
+                    linkedTx.setStatus(TransactionStatus.ARRIVED);
+                    linkedTx.setArrivedAt(now);
+                }
                 break;
 
             case COLLECTED:
+                // Mandatory Pickup OTP verification
+                if (pickup.getPickupOtp() != null && !pickup.isPickupOtpVerified()) {
+                    if (req.getOtp() == null || !pickup.getPickupOtp().trim().equalsIgnoreCase(req.getOtp().trim())) {
+                        throw new BadRequestException("Pickup verification failed: Invalid 6-digit Pickup OTP. Obtain the OTP from the food provider.");
+                    }
+                }
+                pickup.setStatus(PickupStatus.COLLECTED);
                 pickup.setPickedUpAt(now);
+                pickup.setPickupOtpVerified(true);
+                pickup.setActualQuantityCollected(quantityRecorded);
+
                 listing.setStatus(FoodStatus.COLLECTED);
                 foodListingRepository.save(listing);
+
+                if (linkedTx != null) {
+                    linkedTx.setStatus(TransactionStatus.COLLECTED);
+                    linkedTx.setCollectedAt(now);
+                    linkedTx.setPickupOtpVerified(true);
+                    linkedTx.setQuantityCollected(quantityRecorded);
+                    linkedTx.setVerificationStatus(VerificationStatus.VERIFIED);
+                }
+                verificationMethod = "OTP_VERIFIED";
 
                 if (receiver.getUser() != null) {
                     notificationService.createAndSend(
                             receiver.getUser(),
                             "Food Collected from Provider",
-                            listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName() + " has been collected and is en route to you.",
+                            quantityRecorded + " " + listing.getUnit() + " of " + listing.getFoodName() + " has been collected and is en route to you.",
                             NotificationType.FOOD_COLLECTED,
                             pickup.getId().toString()
                     );
@@ -151,17 +223,35 @@ public class PickupService {
                 break;
 
             case DELIVERED:
+                // Mandatory Delivery OTP verification
+                if (pickup.getDeliveryOtp() != null && !pickup.isDeliveryOtpVerified()) {
+                    if (req.getOtp() == null || !pickup.getDeliveryOtp().trim().equalsIgnoreCase(req.getOtp().trim())) {
+                        throw new BadRequestException("Delivery verification failed: Invalid 6-digit Delivery OTP. Obtain the OTP from the NGO receiver.");
+                    }
+                }
+                pickup.setStatus(PickupStatus.DELIVERED);
                 pickup.setDeliveredAt(now);
+                pickup.setDeliveryOtpVerified(true);
+                pickup.setActualQuantityDelivered(quantityRecorded);
+
                 listing.setStatus(FoodStatus.REDISTRIBUTED);
                 foodListingRepository.save(listing);
 
+                if (linkedTx != null) {
+                    linkedTx.setStatus(TransactionStatus.DELIVERED);
+                    linkedTx.setDeliveredAt(now);
+                    linkedTx.setDeliveryOtpVerified(true);
+                    linkedTx.setQuantityDelivered(quantityRecorded);
+                }
+                verificationMethod = "OTP_VERIFIED";
+
                 // Update provider statistics
-                provider.setTotalDonatedMeals(provider.getTotalDonatedMeals() + listing.getQuantity().intValue());
+                provider.setTotalDonatedMeals(provider.getTotalDonatedMeals() + quantityRecorded.intValue());
                 provider.setActiveListingsCount(Math.max(0, provider.getActiveListingsCount() - 1));
                 foodProviderRepository.save(provider);
 
                 // Update receiver statistics
-                receiver.setTotalReceivedMeals(receiver.getTotalReceivedMeals() + listing.getQuantity().intValue());
+                receiver.setTotalReceivedMeals(receiver.getTotalReceivedMeals() + quantityRecorded.intValue());
                 receiverRepository.save(receiver);
 
                 // Update volunteer statistics
@@ -176,7 +266,7 @@ public class PickupService {
                     notificationService.createAndSend(
                             provider.getUser(),
                             "Food Successfully Redistributed!",
-                            "Your donation of " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName() + " was safely delivered to " + receiver.getOrganizationName(),
+                            "Your donation of " + quantityRecorded + " " + listing.getUnit() + " of " + listing.getFoodName() + " was safely delivered to " + receiver.getOrganizationName(),
                             NotificationType.FOOD_DELIVERED,
                             pickup.getId().toString()
                     );
@@ -185,7 +275,7 @@ public class PickupService {
                     notificationService.createAndSend(
                             receiver.getUser(),
                             "Delivery Complete",
-                            "Enjoy! " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName() + " has arrived.",
+                            "Enjoy! " + quantityRecorded + " " + listing.getUnit() + " of " + listing.getFoodName() + " has arrived safely.",
                             NotificationType.FOOD_DELIVERED,
                             pickup.getId().toString()
                     );
@@ -196,8 +286,16 @@ public class PickupService {
                 break;
 
             case FAILED:
+                pickup.setStatus(PickupStatus.FAILED);
+                pickup.setFailedReason(req.getFailedReason() != null ? req.getFailedReason() : "Pickup transit failed");
                 listing.setStatus(FoodStatus.CANCELLED);
                 foodListingRepository.save(listing);
+
+                if (linkedTx != null) {
+                    linkedTx.setStatus(TransactionStatus.FAILED);
+                    linkedTx.setFailedReason(pickup.getFailedReason());
+                }
+
                 if (volunteer != null) {
                     volunteer.setActivePickupsCount(Math.max(0, volunteer.getActivePickupsCount() - 1));
                     volunteerRepository.save(volunteer);
@@ -205,20 +303,30 @@ public class PickupService {
                 break;
         }
 
+        if (linkedTx != null) {
+            donationTransactionRepository.save(linkedTx);
+        }
         pickup = pickupAssignmentRepository.save(pickup);
 
-        // Record tracking event
+        // Record append-only tracking event
         PickupEvent event = new PickupEvent(
                 pickup,
-                newStatus.name(),
+                userEmail,
+                "VOLUNTEER",
+                previousStatus,
+                newStatus,
+                quantityRecorded,
+                verificationMethod,
                 req.getCurrentLatitude() != null ? req.getCurrentLatitude() : (volunteer != null ? volunteer.getCurrentLatitude() : null),
                 req.getCurrentLongitude() != null ? req.getCurrentLongitude() : (volunteer != null ? volunteer.getCurrentLongitude() : null),
-                "Status transitioned to " + newStatus
+                "Status transitioned from " + previousStatus + " to " + newStatus + (req.getProofNotes() != null ? ". Notes: " + req.getProofNotes() : "")
         );
+        event.setCancellationReason(req.getCancellationReason());
+        event.setFailedReason(req.getFailedReason());
         pickupEventRepository.save(event);
 
         auditService.log(userEmail, "PICKUP_STATUS_UPDATE", "PickupAssignment", pickup.getId().toString(),
-                "Status updated to " + newStatus);
+                "Status updated to " + newStatus + " (Method: " + verificationMethod + ")");
 
         PickupAssignmentDto dto = mapToDto(pickup);
         try {
@@ -259,6 +367,14 @@ public class PickupService {
         }
 
         dto.setStatus(p.getStatus());
+        dto.setPickupOtp(p.getPickupOtp());
+        dto.setDeliveryOtp(p.getDeliveryOtp());
+        dto.setPickupOtpVerified(p.isPickupOtpVerified());
+        dto.setDeliveryOtpVerified(p.isDeliveryOtpVerified());
+        dto.setActualQuantityCollected(p.getActualQuantityCollected());
+        dto.setActualQuantityDelivered(p.getActualQuantityDelivered());
+        dto.setCancellationReason(p.getCancellationReason());
+        dto.setFailedReason(p.getFailedReason());
         dto.setAssignedAt(p.getAssignedAt());
         dto.setEnRouteAt(p.getEnRouteAt());
         dto.setArrivedAt(p.getArrivedAt());
@@ -267,6 +383,30 @@ public class PickupService {
         dto.setProofNotes(p.getProofNotes());
         dto.setProofPhotoUrl(p.getProofPhotoUrl());
 
+        // Load append-only event history
+        List<PickupEvent> events = pickupEventRepository.findByPickupAssignmentIdOrderByTimestampAsc(p.getId());
+        dto.setEvents(events.stream().map(this::mapEventToDto).collect(Collectors.toList()));
+
+        return dto;
+    }
+
+    private PickupEventDto mapEventToDto(PickupEvent e) {
+        PickupEventDto dto = new PickupEventDto();
+        dto.setId(e.getId());
+        dto.setPickupAssignmentId(e.getPickupAssignment().getId());
+        dto.setEventType(e.getEventType());
+        dto.setPreviousStatus(e.getPreviousStatus());
+        dto.setNewStatus(e.getNewStatus());
+        dto.setActorEmail(e.getActorEmail());
+        dto.setActorRole(e.getActorRole());
+        dto.setActualQuantity(e.getActualQuantity());
+        dto.setVerificationMethod(e.getVerificationMethod());
+        dto.setCancellationReason(e.getCancellationReason());
+        dto.setFailedReason(e.getFailedReason());
+        dto.setTimestamp(e.getTimestamp());
+        dto.setLatitude(e.getLatitude());
+        dto.setLongitude(e.getLongitude());
+        dto.setDescription(e.getDescription());
         return dto;
     }
 }

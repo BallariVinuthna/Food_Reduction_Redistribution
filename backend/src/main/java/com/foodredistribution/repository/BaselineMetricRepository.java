@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface BaselineMetricRepository extends JpaRepository<BaselineMetric, UUID> {
     Optional<BaselineMetric> findByMetricKey(String metricKey);
+    java.util.List<BaselineMetric> findByIsDemo(boolean isDemo);
 }

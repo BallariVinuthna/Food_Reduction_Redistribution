@@ -32,6 +32,23 @@ public class PickupAssignment {
     private LocalDateTime pickedUpAt;
     private LocalDateTime deliveredAt;
 
+    @Column(length = 10)
+    private String pickupOtp;
+
+    @Column(length = 10)
+    private String deliveryOtp;
+
+    @Column(nullable = false)
+    private boolean pickupOtpVerified = false;
+
+    @Column(nullable = false)
+    private boolean deliveryOtpVerified = false;
+
+    private Double actualQuantityCollected;
+    private Double actualQuantityDelivered;
+    private String cancellationReason;
+    private String failedReason;
+
     private String proofNotes;
     private String proofPhotoUrl;
 
@@ -42,6 +59,9 @@ public class PickupAssignment {
         this.volunteer = volunteer;
         this.status = PickupStatus.ASSIGNED;
         this.assignedAt = LocalDateTime.now();
+        // Generate random 6-digit OTPs
+        this.pickupOtp = String.format("%06d", (int)(Math.random() * 900000) + 100000);
+        this.deliveryOtp = String.format("%06d", (int)(Math.random() * 900000) + 100000);
     }
 
     public UUID getId() { return id; }
@@ -70,6 +90,30 @@ public class PickupAssignment {
 
     public LocalDateTime getDeliveredAt() { return deliveredAt; }
     public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
+
+    public String getPickupOtp() { return pickupOtp; }
+    public void setPickupOtp(String pickupOtp) { this.pickupOtp = pickupOtp; }
+
+    public String getDeliveryOtp() { return deliveryOtp; }
+    public void setDeliveryOtp(String deliveryOtp) { this.deliveryOtp = deliveryOtp; }
+
+    public boolean isPickupOtpVerified() { return pickupOtpVerified; }
+    public void setPickupOtpVerified(boolean pickupOtpVerified) { this.pickupOtpVerified = pickupOtpVerified; }
+
+    public boolean isDeliveryOtpVerified() { return deliveryOtpVerified; }
+    public void setDeliveryOtpVerified(boolean deliveryOtpVerified) { this.deliveryOtpVerified = deliveryOtpVerified; }
+
+    public Double getActualQuantityCollected() { return actualQuantityCollected; }
+    public void setActualQuantityCollected(Double actualQuantityCollected) { this.actualQuantityCollected = actualQuantityCollected; }
+
+    public Double getActualQuantityDelivered() { return actualQuantityDelivered; }
+    public void setActualQuantityDelivered(Double actualQuantityDelivered) { this.actualQuantityDelivered = actualQuantityDelivered; }
+
+    public String getCancellationReason() { return cancellationReason; }
+    public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public String getFailedReason() { return failedReason; }
+    public void setFailedReason(String failedReason) { this.failedReason = failedReason; }
 
     public String getProofNotes() { return proofNotes; }
     public void setProofNotes(String proofNotes) { this.proofNotes = proofNotes; }

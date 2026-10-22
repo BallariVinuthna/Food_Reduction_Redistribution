@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Match, FoodListing } from '../types';
+import { Match, PickupAssignment } from '../types';
 import { MatchScoreBadge } from '../components/MatchScoreBadge';
 import {
   HeartHandshake,
@@ -8,21 +8,23 @@ import {
   XCircle,
   Clock,
   MapPin,
-  UtensilsCrossed,
-  Filter,
   Building2,
-  Sparkles,
-  AlertTriangle,
+  Filter,
+  KeyRound,
+  Truck,
+  ShieldCheck,
+  Split
 } from 'lucide-react';
 
 export const ReceiverDashboard: React.FC = () => {
   const [activeMatches, setActiveMatches] = useState<Match[]>([]);
+  const [incomingPickups, setIncomingPickups] = useState<PickupAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filterVegOnly, setFilterVegOnly] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const fetchMatches = async () => {
+  const fetchMatchesAndPickups = async () => {
     try {
       // Fetch active listings and their matches
       const activeListings = await api.getActiveListings();
@@ -36,6 +38,10 @@ export const ReceiverDashboard: React.FC = () => {
       // Deduplicate by match ID
       const uniqueMatches = Array.from(new Map(allMatches.map((m) => [m.id, m])).values());
       setActiveMatches(uniqueMatches);
+
+      // Fetch pickups
+      const pickups = await api.getAllPickups();
+      setIncomingPickups(pickups);
     } catch (err) {
       console.error(err);
     } finally {
@@ -44,16 +50,16 @@ export const ReceiverDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchMatches();
+    fetchMatchesAndPickups();
   }, []);
 
   const handleAccept = async (matchId: string) => {
     setActionLoading(matchId);
     try {
       await api.acceptMatch(matchId, 'Accepted by Robin Hood Army Jubilee Hills team for immediate community distribution.');
-      setSuccessMessage('Donation accepted! A volunteer has been assigned for pickup and the provider has been notified.');
-      await fetchMatches();
-      setTimeout(() => setSuccessMessage(null), 5000);
+      setSuccessMessage('Donation accepted! A delivery OTP has been generated. Provide this PIN to the volunteer when they arrive with the food.');
+      await fetchMatchesAndPickups();
+      setTimeout(() => setSuccessMessage(null), 6000);
     } catch (err: any) {
       alert(err.message || 'Failed to accept donation');
     } finally {
@@ -66,7 +72,7 @@ export const ReceiverDashboard: React.FC = () => {
     try {
       await api.rejectMatch(matchId, 'Recipient shelter currently at peak dinner capacity.');
       setSuccessMessage('Donation declined. The system has automatically cascaded the offer to the next ranked receiver.');
-      await fetchMatches();
+      await fetchMatchesAndPickups();
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       alert(err.message || 'Failed to reject donation');
@@ -85,7 +91,7 @@ export const ReceiverDashboard: React.FC = () => {
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Robin Hood Army • Hyderabad</h1>
           <p className="text-xs text-blue-200 mt-1">
-            Registered Non-Profit Food Redistribution Partner • Capacity: 120 Meals
+            Registered Non-Profit Food Redistribution Partner • Capacity: 120 Meals • Verified Status
           </p>
         </div>
 
@@ -105,6 +111,55 @@ export const ReceiverDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Incoming Deliveries & Handover Verification PINs */}
+      {incomingPickups.length > 0 && (
+        <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Truck className="w-5 h-5 text-blue-700" />
+              <h3 className="font-bold text-base text-slate-900">
+                Incoming Deliveries & Secure Handover PINs
+              </h3>
+            </div>
+            <span className="text-xs text-slate-500">Double OTP Handover Protocol</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {incomingPickups
+              .filter(p => p.status !== 'DELIVERED' && p.status !== 'FAILED')
+              .map((p) => (
+                <div key={p.id} className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-900">{p.foodName}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                      {p.status}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600">
+                    From: <strong>{p.providerOrganizationName}</strong> • Qty: <strong>{p.quantity} {p.unit}</strong>
+                  </p>
+
+                  <div className="p-3 rounded-xl bg-white border border-blue-300 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-semibold text-slate-700">Delivery Handover PIN (OTP):</span>
+                    </div>
+                    <span className="font-mono text-base font-extrabold text-emerald-800 tracking-wider">
+                      {p.deliveryOtp || '839201'}
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Disclose this OTP to volunteer {p.volunteerName || 'Vikram Sharma'} only after physical inspection.</span>
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter Ribbon */}
       <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
@@ -117,7 +172,7 @@ export const ReceiverDashboard: React.FC = () => {
             type="checkbox"
             checked={filterVegOnly}
             onChange={(e) => setFilterVegOnly(e.target.checked)}
-            className="rounded text-emerald-600 focus:ring-emerald-500"
+            className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
           />
           <span>Filter Vegetarian Only</span>
         </label>

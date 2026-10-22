@@ -25,7 +25,6 @@ public class CreateFoodListingRequest {
     private LocalDateTime availableFrom;
 
     @NotNull(message = "Available until time is required")
-    @Future(message = "Available until must be in the future")
     private LocalDateTime availableUntil;
 
     @NotBlank(message = "Location address is required")
