@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class PrototypeValidationReportDto {
+    private String runId;
+    private boolean isSimulation = true;
     private String criticalAssumption = "The system can successfully match an available surplus-food listing with a suitable receiver within the food's available redistribution time.";
     private int totalTestCases;
     private int successfulMatches;
@@ -32,6 +34,12 @@ public class PrototypeValidationReportDto {
     public PrototypeValidationReportDto() {
         this.benchmarkTimestamp = LocalDateTime.now();
     }
+
+    public String getRunId() { return runId; }
+    public void setRunId(String runId) { this.runId = runId; }
+
+    public boolean isSimulation() { return isSimulation; }
+    public void setSimulation(boolean simulation) { isSimulation = simulation; }
 
     public String getCriticalAssumption() { return criticalAssumption; }
     public void setCriticalAssumption(String criticalAssumption) { this.criticalAssumption = criticalAssumption; }

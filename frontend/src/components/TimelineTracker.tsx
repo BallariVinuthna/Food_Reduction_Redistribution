@@ -1,13 +1,13 @@
 import React from 'react';
-import { FoodStatus } from '../types';
+import { FoodStatus, PickupStatus } from '../types';
 import { CheckCircle2, Circle, Clock, PackageCheck } from 'lucide-react';
 
 interface TimelineTrackerProps {
-  currentStatus: FoodStatus;
+  currentStatus: FoodStatus | PickupStatus | string;
   compact?: boolean;
 }
 
-const STAGES: { key: FoodStatus; label: string; desc: string }[] = [
+const STAGES: { key: string; label: string; desc: string }[] = [
   { key: 'AVAILABLE', label: '1. Listed', desc: 'Surplus registered' },
   { key: 'RESERVED', label: '2. Matched', desc: 'Ranked receivers scored' },
   { key: 'ACCEPTED', label: '3. Accepted', desc: 'Receiver accepted' },
@@ -17,22 +17,27 @@ const STAGES: { key: FoodStatus; label: string; desc: string }[] = [
 ];
 
 export const TimelineTracker: React.FC<TimelineTrackerProps> = ({ currentStatus, compact = false }) => {
-  const getStageIndex = (status: FoodStatus): number => {
+  const getStageIndex = (status: string): number => {
     switch (status) {
       case 'AVAILABLE': return 0;
       case 'RESERVED': return 1;
       case 'ACCEPTED': return 2;
-      case 'PICKUP_ASSIGNED': return 3;
+      case 'PICKUP_ASSIGNED':
+      case 'ASSIGNED':
+      case 'EN_ROUTE':
+      case 'ARRIVED': return 3;
       case 'COLLECTED': return 4;
-      case 'REDISTRIBUTED': return 5;
+      case 'REDISTRIBUTED':
+      case 'DELIVERED': return 5;
       case 'EXPIRED':
-      case 'CANCELLED': return -1;
+      case 'CANCELLED':
+      case 'FAILED': return -1;
       default: return 0;
     }
   };
 
   const currentIndex = getStageIndex(currentStatus);
-  const isFailedOrExpired = currentStatus === 'EXPIRED' || currentStatus === 'CANCELLED';
+  const isFailedOrExpired = currentStatus === 'EXPIRED' || currentStatus === 'CANCELLED' || currentStatus === 'FAILED';
 
   if (compact) {
     return (

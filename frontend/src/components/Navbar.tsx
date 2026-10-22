@@ -12,6 +12,9 @@ import {
   Truck,
   HeartHandshake,
   ExternalLink,
+  LogOut,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -121,85 +124,131 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </nav>
 
-          {/* Right Action: Notifications & 1-Click Role Switcher */}
-          <div className="flex items-center gap-3">
-            {/* Notification Bell */}
-            <button
-              onClick={openNotifications}
-              className="relative p-2 rounded-xl text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors"
-              title="Notifications"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-xs">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* 1-Click Role Switcher */}
-            <div className="relative">
+          {/* Right Action: Notifications & Auth Controls */}
+          <div className="flex items-center gap-2.5">
+            {/* If logged in: Show Notification Bell */}
+            {user && (
               <button
-                onClick={() => setRoleDropdown(!roleDropdown)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-emerald-500 transition-all shadow-2xs text-left"
+                onClick={openNotifications}
+                className="relative p-2 rounded-xl text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors"
+                title="Notifications"
               >
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold text-xs">
-                  {user?.role ? user.role[0] : 'U'}
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-xs font-semibold text-slate-900 leading-tight">
-                    {user?.organizationName || user?.fullName || 'Demo User'}
-                  </p>
-                  <p className="text-[10px] text-emerald-700 font-medium leading-tight">
-                    Role: {user?.role || 'Guest'}
-                  </p>
-                </div>
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-xs">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
+            )}
 
-              {roleDropdown && (
-                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white shadow-xl border border-slate-200 py-2 z-50">
-                  <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Instant Demo Role Switcher
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      Switch personas instantly for PSE viva evaluation
-                    </p>
-                  </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                {/* 1-Click Role Switcher */}
+                <div className="relative">
+                  <button
+                    onClick={() => setRoleDropdown(!roleDropdown)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-emerald-500 transition-all shadow-2xs text-left cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold text-xs">
+                      {user.role ? user.role[0] : 'U'}
+                    </div>
+                    <div className="hidden sm:block">
+                      <p className="text-xs font-semibold text-slate-900 leading-tight max-w-[120px] truncate">
+                        {user.organizationName || user.fullName || 'Demo User'}
+                      </p>
+                      <p className="text-[10px] text-emerald-700 font-medium leading-tight">
+                        Role: {user.role}
+                      </p>
+                    </div>
+                  </button>
 
-                  <div className="p-1 space-y-1">
-                    {(['FOOD_PROVIDER', 'NGO_RECEIVER', 'VOLUNTEER', 'ADMIN'] as Role[]).map((r) => {
-                      const item = DEMO_CREDENTIALS[r];
-                      const isActive = user?.role === r;
-                      return (
-                        <button
-                          key={r}
-                          onClick={() => {
-                            switchDemoRole(r);
-                            setRoleDropdown(false);
-                            if (r === 'FOOD_PROVIDER') setActiveTab('provider');
-                            if (r === 'NGO_RECEIVER') setActiveTab('receiver');
-                            if (r === 'VOLUNTEER') setActiveTab('volunteer');
-                            if (r === 'ADMIN') setActiveTab('analytics');
-                          }}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                            isActive
-                              ? 'bg-emerald-50 text-emerald-900 font-semibold'
-                              : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div>
-                            <div className="font-medium text-slate-900">{item.title}</div>
-                            <div className="text-[10px] text-slate-500">{item.email}</div>
-                          </div>
-                          {isActive && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {roleDropdown && (
+                    <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white shadow-xl border border-slate-200 py-2 z-50">
+                      <div className="px-3 py-2 border-b border-slate-100">
+                        <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Instant Demo Role Switcher
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Switch personas instantly for evaluation
+                        </p>
+                      </div>
+
+                      <div className="p-1 space-y-1">
+                        {(['FOOD_PROVIDER', 'NGO_RECEIVER', 'VOLUNTEER', 'ADMIN'] as Role[]).map((r) => {
+                          const item = DEMO_CREDENTIALS[r];
+                          const isActive = user?.role === r;
+                          return (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                switchDemoRole(r);
+                                setRoleDropdown(false);
+                                if (r === 'FOOD_PROVIDER') setActiveTab('provider');
+                                if (r === 'NGO_RECEIVER') setActiveTab('receiver');
+                                if (r === 'VOLUNTEER') setActiveTab('volunteer');
+                                if (r === 'ADMIN') setActiveTab('analytics');
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-50 text-emerald-900 font-semibold'
+                                  : 'text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div>
+                                <div className="font-medium text-slate-900">{item.title}</div>
+                                <div className="text-[10px] text-slate-500">{item.email}</div>
+                              </div>
+                              {isActive && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Explicit Sign Out Button */}
+                <button
+                  onClick={() => {
+                    logout();
+                    setActiveTab('login');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition-all text-xs font-semibold shadow-2xs cursor-pointer"
+                  title="Sign Out of account"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              /* If unauthenticated: Show Sign In & Sign Up buttons */
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('login')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeTab === 'login'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white'
+                  }`}
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('register')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeTab === 'register'
+                      ? 'bg-emerald-800 text-white shadow-xs'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                  }`}
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Register</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

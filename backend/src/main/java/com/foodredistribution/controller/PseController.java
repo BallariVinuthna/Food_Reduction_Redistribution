@@ -16,10 +16,20 @@ public class PseController {
 
     private final PseService pseService;
     private final SystemIdeaRepository systemIdeaRepository;
+    private final com.foodredistribution.service.LiveDemoSimulatorService liveDemoSimulatorService;
 
-    public PseController(PseService pseService, SystemIdeaRepository systemIdeaRepository) {
+    public PseController(PseService pseService,
+                         SystemIdeaRepository systemIdeaRepository,
+                         com.foodredistribution.service.LiveDemoSimulatorService liveDemoSimulatorService) {
         this.pseService = pseService;
         this.systemIdeaRepository = systemIdeaRepository;
+        this.liveDemoSimulatorService = liveDemoSimulatorService;
+    }
+
+    @PostMapping("/live-demo/refresh")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> refreshLiveDemo() {
+        Map<String, Object> result = liveDemoSimulatorService.forceRefreshLiveDemo();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/module-1")

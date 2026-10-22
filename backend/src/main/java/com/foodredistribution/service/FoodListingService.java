@@ -17,8 +17,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class FoodListingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FoodListingService.class);
 
     private final FoodListingRepository foodListingRepository;
     private final FoodSafetyCheckRepository foodSafetyCheckRepository;
@@ -27,6 +32,7 @@ public class FoodListingService {
     private final NotificationService notificationService;
     private final AuditService auditService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final LiveDemoSimulatorService liveDemoSimulatorService;
 
     public FoodListingService(FoodListingRepository foodListingRepository,
                               FoodSafetyCheckRepository foodSafetyCheckRepository,
@@ -34,7 +40,8 @@ public class FoodListingService {
                               UserRepository userRepository,
                               NotificationService notificationService,
                               AuditService auditService,
-                              SimpMessagingTemplate messagingTemplate) {
+                              SimpMessagingTemplate messagingTemplate,
+                              LiveDemoSimulatorService liveDemoSimulatorService) {
         this.foodListingRepository = foodListingRepository;
         this.foodSafetyCheckRepository = foodSafetyCheckRepository;
         this.foodProviderRepository = foodProviderRepository;
@@ -42,6 +49,7 @@ public class FoodListingService {
         this.notificationService = notificationService;
         this.auditService = auditService;
         this.messagingTemplate = messagingTemplate;
+        this.liveDemoSimulatorService = liveDemoSimulatorService;
     }
 
     @Transactional
@@ -50,9 +58,40 @@ public class FoodListingService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userEmail));
 
         FoodProvider provider = foodProviderRepository.findByUser(user)
-                .orElseThrow(() -> new BadRequestException("User does not have a registered food provider profile"));
+                .orElseGet(() -> {
+                    if (user.getRole() == com.foodredistribution.entity.Role.ADMIN) {
+                        FoodProvider adminProvider = new FoodProvider(
+                                user,
+                                user.getFullName() != null ? user.getFullName() + " Dispatch" : "PSE Central Operations Hub",
+                                "CENTRAL_HUB",
+                                req.getAddress() != null && !req.getAddress().isBlank() ? req.getAddress() : "Road No. 1, Banjara Hills, Hyderabad",
+                                req.getLatitude() != null ? req.getLatitude() : 17.4156,
+                                req.getLongitude() != null ? req.getLongitude() : 78.4487,
+                                user.getFullName() != null ? user.getFullName() : "Administrator",
+                                req.getContactPhone() != null && !req.getContactPhone().isBlank() ? req.getContactPhone() : "+91 9876543210"
+                        );
+                        return foodProviderRepository.save(adminProvider);
+                    }
+                    throw new BadRequestException("User does not have a registered food provider profile");
+                });
 
-        if (req.getAvailableUntil().isBefore(LocalDateTime.now())) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime availableUntil = req.getAvailableUntil();
+        LocalDateTime availableFrom = req.getAvailableFrom() != null ? req.getAvailableFrom() : now;
+        LocalDateTime prepTime = req.getPreparationTime() != null ? req.getPreparationTime() : now.minusHours(1);
+
+        // Auto-correct if client sent UTC ISO timestamps (e.g. JavaScript toISOString) to a server running in local timezone
+        if (availableUntil != null && availableUntil.isBefore(now.minusMinutes(2))) {
+            java.time.ZoneOffset currentOffset = java.time.ZoneId.systemDefault().getRules().getOffset(java.time.Instant.now());
+            int offsetSeconds = currentOffset.getTotalSeconds();
+            if (offsetSeconds != 0 && availableUntil.plusSeconds(offsetSeconds).isAfter(now)) {
+                availableUntil = availableUntil.plusSeconds(offsetSeconds);
+                if (availableFrom != null) availableFrom = availableFrom.plusSeconds(offsetSeconds);
+                if (prepTime != null) prepTime = prepTime.plusSeconds(offsetSeconds);
+            }
+        }
+
+        if (availableUntil == null || availableUntil.isBefore(now)) {
             throw new BadRequestException("Available until time must be in the future");
         }
 
@@ -62,9 +101,9 @@ public class FoodListingService {
                 req.getFoodCategory(),
                 req.getQuantity(),
                 req.getUnit(),
-                req.getPreparationTime(),
-                req.getAvailableFrom(),
-                req.getAvailableUntil(),
+                prepTime,
+                availableFrom,
+                availableUntil,
                 req.getAddress(),
                 req.getLatitude(),
                 req.getLongitude(),
@@ -109,6 +148,14 @@ public class FoodListingService {
     public List<FoodListingDto> getActiveListings() {
         LocalDateTime now = LocalDateTime.now();
         List<FoodListing> listings = foodListingRepository.findActiveSurplus(now);
+        if (listings.size() < 3) {
+            try {
+                liveDemoSimulatorService.ensureVibrantDemoData();
+                listings = foodListingRepository.findActiveSurplus(now);
+            } catch (Exception e) {
+                logger.warn("Live demo data check note: {}", e.getMessage());
+            }
+        }
         return listings.stream()
                 .map(l -> {
                     l.recalculateUrgency();
@@ -182,6 +229,9 @@ public class FoodListingService {
         dto.setFoodName(listing.getFoodName());
         dto.setFoodCategory(listing.getFoodCategory());
         dto.setQuantity(listing.getQuantity());
+        dto.setVersion(listing.getVersion());
+        dto.setReservedQuantity(listing.getReservedQuantity());
+        dto.setRemainingQuantity(listing.getRemainingQuantity());
         dto.setUnit(listing.getUnit());
         dto.setPreparationTime(listing.getPreparationTime());
         dto.setAvailableFrom(listing.getAvailableFrom());

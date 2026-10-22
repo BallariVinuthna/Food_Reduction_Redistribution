@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
 import { FoodListing } from '../types';
+import { FoodImageChecker } from '../components/FoodImageChecker';
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,6 +12,8 @@ import {
   ShieldCheck,
   Sparkles,
   Info,
+  Camera,
+  Layers,
 } from 'lucide-react';
 
 interface CreateListingWizardProps {
@@ -19,6 +22,8 @@ interface CreateListingWizardProps {
 }
 
 export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSuccess, onCancel }) => {
+  const [entryMode, setEntryMode] = useState<'ai-checker' | 'manual'>('ai-checker');
+  const [aiAutofilled, setAiAutofilled] = useState(false);
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +57,31 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
   const [providerCertified, setProviderCertified] = useState(true);
   const [safetyNotes, setSafetyNotes] = useState('Freshly prepared and held at 65°C in clean food-grade aluminum containers.');
 
+  const handleApplyFromAi = (confirmedData: {
+    foodName: string;
+    foodCategory: string;
+    quantity: number;
+    unit: string;
+    storageCondition: string;
+    allergenInfo: string;
+    availableMinutes: number;
+    photoUrl: string;
+  }) => {
+    setFoodName(confirmedData.foodName);
+    setFoodCategory(confirmedData.foodCategory);
+    setQuantity(confirmedData.quantity);
+    setUnit(confirmedData.unit);
+    setStorageCondition(confirmedData.storageCondition);
+    setAllergenInfo(confirmedData.allergenInfo);
+    setAvailableMinutes(confirmedData.availableMinutes);
+    if (confirmedData.photoUrl) {
+      setPhotoUrl(confirmedData.photoUrl);
+    }
+    setAiAutofilled(true);
+    setEntryMode('manual');
+    setStep(2); // Take donor to review Quantity & Time then Safety checklist
+  };
+
   // Pre-calculated Available Time Display
   const now = new Date();
   const availableUntilTime = new Date(now.getTime() + availableMinutes * 60000);
@@ -74,14 +104,23 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
     setSubmitting(true);
     setError(null);
 
+    const submitTime = new Date();
+    const availableUntilDate = new Date(submitTime.getTime() + availableMinutes * 60000);
+    const prepDate = new Date(submitTime.getTime() - 60 * 60000);
+
+    const toLocalISO = (d: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+
     const payload = {
       foodName,
       foodCategory,
       quantity,
       unit,
-      preparationTime: new Date(now.getTime() - 60 * 60000).toISOString(),
-      availableFrom: now.toISOString(),
-      availableUntil: availableUntilTime.toISOString(),
+      preparationTime: toLocalISO(prepDate),
+      availableFrom: toLocalISO(submitTime),
+      availableUntil: toLocalISO(availableUntilDate),
       address,
       latitude,
       longitude,
@@ -113,40 +152,103 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
-      <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-        {/* Wizard Header */}
-        <div className="p-6 bg-gradient-to-r from-emerald-900 to-teal-800 text-white flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-lime-300 uppercase tracking-wider">
-              Surplus Registration Wizard
-            </span>
-            <h2 className="text-xl font-bold mt-1">List Edible Surplus Food</h2>
-          </div>
-          <button
-            onClick={onCancel}
-            className="text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
-          >
-            Cancel
-          </button>
-        </div>
+    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 space-y-6">
+      {/* Entry Mode Switcher */}
+      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2">
+        <button
+          type="button"
+          onClick={() => setEntryMode('ai-checker')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+            entryMode === 'ai-checker'
+              ? 'bg-[#032C20] text-white shadow-md'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#8BE34B]" />
+          <span>AI Food Image Checker</span>
+          <span className="text-[10px] bg-[#8BE34B]/20 text-[#8BE34B] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+            Fast-Track
+          </span>
+        </button>
 
-        {/* Wizard Progress Bar */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span className={step >= 1 ? 'text-emerald-700 font-bold' : ''}>1. Food Details</span>
-            <span className={step >= 2 ? 'text-emerald-700 font-bold' : ''}>2. Quantity & Time</span>
-            <span className={step >= 3 ? 'text-emerald-700 font-bold' : ''}>3. Location</span>
-            <span className={step >= 4 ? 'text-emerald-700 font-bold' : ''}>4. Safety Check</span>
-            <span className={step >= 5 ? 'text-emerald-700 font-bold' : ''}>5. Preview</span>
+        <button
+          type="button"
+          onClick={() => setEntryMode('manual')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+            entryMode === 'manual'
+              ? 'bg-[#032C20] text-white shadow-md'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-slate-400" />
+          <span>Standard Step-by-Step Entry</span>
+          {aiAutofilled && (
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+              ✓ Pre-filled
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Render AI Checker or Step Wizard */}
+      {entryMode === 'ai-checker' ? (
+        <FoodImageChecker
+          onApplyToDonationForm={handleApplyFromAi}
+          onSkipToManualForm={() => setEntryMode('manual')}
+        />
+      ) : (
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+          {/* AI Pre-fill notice banner if applicable */}
+          {aiAutofilled && (
+            <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-3 flex items-center justify-between text-xs text-emerald-900">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>AI Inspection Applied:</strong> Pre-filled from your analyzed photo. Please review the details below.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEntryMode('ai-checker')}
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline"
+              >
+                Scan Another Photo
+              </button>
+            </div>
+          )}
+
+          {/* Wizard Header */}
+          <div className="p-6 bg-gradient-to-r from-emerald-900 to-teal-800 text-white flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-lime-300 uppercase tracking-wider">
+                Surplus Registration Wizard
+              </span>
+              <h2 className="text-xl font-bold mt-1">List Edible Surplus Food</h2>
+            </div>
+            <button
+              onClick={onCancel}
+              className="text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
+            >
+              Cancel
+            </button>
           </div>
-          <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div
-              className="bg-emerald-600 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${(step / 5) * 100}%` }}
-            />
+
+          {/* Wizard Progress Bar */}
+          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span className={step >= 1 ? 'text-emerald-700 font-bold' : ''}>1. Food Details</span>
+              <span className={step >= 2 ? 'text-emerald-700 font-bold' : ''}>2. Quantity & Time</span>
+              <span className={step >= 3 ? 'text-emerald-700 font-bold' : ''}>3. Location</span>
+              <span className={step >= 4 ? 'text-emerald-700 font-bold' : ''}>4. Safety Check</span>
+              <span className={step >= 5 ? 'text-emerald-700 font-bold' : ''}>5. Preview</span>
+            </div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-emerald-600 h-1.5 rounded-full transition-all duration-300"
+                style={{ width: `${(step / 5) * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
 
         {/* Wizard Body */}
         <div className="p-6 sm:p-8">
@@ -527,7 +629,7 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
             {step > 1 ? (
               <button
                 type="button"
-                onClick={() => setStep(step - 1)}
+                onClick={() => { setError(null); setStep(step - 1); }}
                 className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -540,7 +642,7 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
             {step < 5 ? (
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
+                onClick={() => { setError(null); setStep(step + 1); }}
                 className="px-5 py-2.5 rounded-xl bg-emerald-800 text-white text-xs font-semibold hover:bg-emerald-900 transition-colors flex items-center gap-1.5 shadow-xs"
               >
                 Next
@@ -560,6 +662,7 @@ export const CreateListingWizard: React.FC<CreateListingWizardProps> = ({ onSucc
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

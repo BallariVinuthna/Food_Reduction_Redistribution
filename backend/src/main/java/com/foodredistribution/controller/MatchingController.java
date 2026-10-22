@@ -22,10 +22,20 @@ public class MatchingController {
         this.matchingService = matchingService;
     }
 
-    @PostMapping("/{foodListingId}")
+    @PostMapping({ "/{foodListingId}", "/generate/{foodListingId}" })
     public ResponseEntity<ApiResponse<List<MatchDto>>> generateMatches(@PathVariable UUID foodListingId) {
         List<MatchDto> matches = matchingService.generateMatchesForListing(foodListingId);
         return ResponseEntity.ok(ApiResponse.ok("Smart matches generated successfully", matches));
+    }
+
+    @PostMapping("/{foodListingId}/claim")
+    public ResponseEntity<ApiResponse<MatchDto>> claimListing(
+            @PathVariable UUID foodListingId,
+            @RequestBody(required = false) Map<String, Object> req,
+            Authentication authentication) {
+        String userEmail = authentication != null ? authentication.getName() : "receiver@demo.local";
+        MatchDto match = matchingService.claimListing(foodListingId, req, userEmail);
+        return ResponseEntity.ok(ApiResponse.ok("Surplus food successfully claimed and assigned", match));
     }
 
     @GetMapping("/{foodListingId}")
@@ -59,5 +69,24 @@ public class MatchingController {
         String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Capacity temporarily full";
         MatchDto match = matchingService.rejectMatch(matchId, reason, userEmail);
         return ResponseEntity.ok(ApiResponse.ok("Match rejected; next ranked receiver notified", match));
+    }
+
+    @PostMapping("/{foodListingId}/split-allocate")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> splitAllocate(
+            @PathVariable UUID foodListingId,
+            @RequestBody List<Map<String, Object>> allocations,
+            Authentication authentication) {
+        String userEmail = authentication != null ? authentication.getName() : "receiver@demo.local";
+        List<Map<String, Object>> results = new java.util.ArrayList<>();
+        for (Map<String, Object> alloc : allocations) {
+            MatchDto match = matchingService.claimListing(foodListingId, alloc, userEmail);
+            results.add(Map.of(
+                    "matchId", match.getId(),
+                    "receiverName", match.getReceiverOrganizationName(),
+                    "quantityAllocated", alloc.getOrDefault("quantity", match.getQuantity()),
+                    "status", match.getStatus()
+            ));
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Split donation successfully allocated across receivers", results));
     }
 }

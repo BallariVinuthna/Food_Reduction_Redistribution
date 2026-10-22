@@ -22,11 +22,24 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    secret: ${JWT_SECRET:yY6ivv3fvUAfs6p4LBwHGmsJKwW4YBg8PEhBaQWlnTg=}
     expiration-ms: 86400000 # 24 hours
     refresh-expiration-ms: 604800000 # 7 days
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+  email:
+    resend-api-key: ${RESEND_API_KEY:}
+    from-address: ${EMAIL_FROM:onboarding@resend.dev}
+  sms:
+    twilio-sid: ${TWILIO_ACCOUNT_SID:}
+    twilio-secret: ${TWILIO_AUTH_TOKEN:}
+    from-phone: ${TWILIO_FROM_PHONE:+18005550199}
+  ai:
+    openai-api-key: ${OPENAI_API_KEY:}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:pfyvtc1h}
+    api-key: ${CLOUDINARY_API_KEY:864858557272116}
+    upload-preset: ${CLOUDINARY_UPLOAD_PRESET:food}
   matching:
     weight-distance: 0.30
     weight-quantity: 0.20
@@ -44,3 +57,4 @@ logging:
   level:
     com.foodredistribution: INFO
     org.springframework.security: WARN
+

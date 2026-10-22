@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface PrototypeTestRepository extends JpaRepository<PrototypeTest, UUID> {
     List<PrototypeTest> findAllByOrderByTestTimestampDesc();
+    List<PrototypeTest> findByBenchmarkRunIdOrderByTestTimestampAsc(UUID benchmarkRunId);
+    List<PrototypeTest> findByRunIdOrderByTestTimestampAsc(String runId);
 }

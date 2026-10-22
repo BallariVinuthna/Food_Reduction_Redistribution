@@ -25,29 +25,38 @@ public class MatchingService {
     private final ReceiverRepository receiverRepository;
     private final MatchRepository matchRepository;
     private final PickupAssignmentRepository pickupAssignmentRepository;
+    private final PickupEventRepository pickupEventRepository;
     private final VolunteerRepository volunteerRepository;
+    private final DonationTransactionService donationTransactionService;
     private final NotificationService notificationService;
     private final AuditService auditService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
     public MatchingService(MatchingEngine matchingEngine,
                            FoodListingRepository foodListingRepository,
                            ReceiverRepository receiverRepository,
                            MatchRepository matchRepository,
                            PickupAssignmentRepository pickupAssignmentRepository,
+                           PickupEventRepository pickupEventRepository,
                            VolunteerRepository volunteerRepository,
+                           DonationTransactionService donationTransactionService,
                            NotificationService notificationService,
                            AuditService auditService,
-                           SimpMessagingTemplate messagingTemplate) {
+                           SimpMessagingTemplate messagingTemplate,
+                           UserRepository userRepository) {
         this.matchingEngine = matchingEngine;
         this.foodListingRepository = foodListingRepository;
         this.receiverRepository = receiverRepository;
         this.matchRepository = matchRepository;
         this.pickupAssignmentRepository = pickupAssignmentRepository;
+        this.pickupEventRepository = pickupEventRepository;
         this.volunteerRepository = volunteerRepository;
+        this.donationTransactionService = donationTransactionService;
         this.notificationService = notificationService;
         this.auditService = auditService;
         this.messagingTemplate = messagingTemplate;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -55,17 +64,20 @@ public class MatchingService {
         FoodListing listing = foodListingRepository.findById(foodListingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Food listing not found: " + foodListingId));
 
-        if (listing.getStatus() != FoodStatus.AVAILABLE) {
-            throw new BadRequestException("Listing is not in AVAILABLE status: " + listing.getStatus());
+        if (listing.getStatus() != FoodStatus.AVAILABLE && listing.getStatus() != FoodStatus.RESERVED) {
+            throw new BadRequestException("Listing is not available for matching: " + listing.getStatus());
         }
+
+        UUID attemptId = UUID.randomUUID();
+        long startNano = System.nanoTime();
 
         List<Receiver> availableReceivers = receiverRepository.findByIsAvailableTrue();
         List<MatchingEngine.MatchCandidate> candidates = matchingEngine.findRankedMatches(listing, availableReceivers);
+        long elapsedMs = (System.nanoTime() - startNano) / 1_000_000;
 
         List<Match> savedMatches = new ArrayList<>();
 
         for (MatchingEngine.MatchCandidate cand : candidates) {
-            // Check if existing match proposal exists
             Match match = new Match(
                     listing,
                     cand.getReceiver(),
@@ -79,11 +91,18 @@ public class MatchingService {
                     cand.getDistanceKm(),
                     cand.getEstimatedPickupMinutes()
             );
+            match.setAttemptId(attemptId);
+            match.setRequestedQuantity(listing.getQuantity());
+            match.setAllocatedQuantity(cand.getAllocatedQuantity());
+            match.setSplitAllocation(cand.isSplitAllocation());
+            match.setSplitBatchNumber(cand.getSplitBatchNumber());
+            match.setExecutionTimeMs(elapsedMs);
+
             match = matchRepository.save(match);
             savedMatches.add(match);
         }
 
-        // Notify top receiver(s)
+        // Notify top receiver
         if (!savedMatches.isEmpty()) {
             Match topMatch = savedMatches.get(0);
             topMatch.setStatus(MatchStatus.NOTIFIED);
@@ -95,7 +114,7 @@ public class MatchingService {
             notificationService.createAndSend(
                     topMatch.getReceiver().getUser(),
                     "New Surplus Food Available (" + topMatch.getMatchScore() + "% Match)",
-                    "Urgent: " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName()
+                    "Urgent: " + topMatch.getAllocatedQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName()
                             + " available " + topMatch.getDistanceKm() + " km away. Approx "
                             + (listing.getAvailableMinutesRemaining() != null ? listing.getAvailableMinutesRemaining() : 60)
                             + " mins remaining.",
@@ -104,14 +123,60 @@ public class MatchingService {
             );
 
             auditService.log("SYSTEM", "MATCH_GENERATED", "Match", topMatch.getId().toString(),
-                    "Top match generated for receiver: " + topMatch.getReceiver().getOrganizationName() + " with score " + topMatch.getMatchScore());
+                    "Top match generated for receiver: " + topMatch.getReceiver().getOrganizationName()
+                            + " with score " + topMatch.getMatchScore() + " (Attempt: " + attemptId + ")");
         } else {
-            // Fallback: No nearby receiver found within search radius
             auditService.log("SYSTEM", "MATCH_FALLBACK", "FoodListing", listing.getId().toString(),
-                    "No receiver found within boundary. Triggered fallback coordination alert.");
+                    "No receiver found within boundary for attempt: " + attemptId);
         }
 
         return savedMatches.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Proposes split batches across multiple receivers when surplus volume is high.
+     */
+    @Transactional
+    public List<MatchDto> generateSplitMatchesForListing(UUID foodListingId) {
+        FoodListing listing = foodListingRepository.findById(foodListingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Food listing not found: " + foodListingId));
+
+        UUID attemptId = UUID.randomUUID();
+        long startNano = System.nanoTime();
+
+        List<Receiver> availableReceivers = receiverRepository.findByIsAvailableTrue();
+        List<MatchingEngine.MatchCandidate> splits = matchingEngine.findSplitAllocationMatches(listing, availableReceivers);
+        long elapsedMs = (System.nanoTime() - startNano) / 1_000_000;
+
+        List<Match> saved = new ArrayList<>();
+        for (MatchingEngine.MatchCandidate cand : splits) {
+            Match m = new Match(
+                    listing,
+                    cand.getReceiver(),
+                    cand.getTotalScore(),
+                    cand.getLocationScore(),
+                    cand.getQuantityScore(),
+                    cand.getUrgencyScore(),
+                    cand.getFoodTypeScore(),
+                    cand.getCapacityScore(),
+                    cand.getReliabilityScore(),
+                    cand.getDistanceKm(),
+                    cand.getEstimatedPickupMinutes()
+            );
+            m.setAttemptId(attemptId);
+            m.setRequestedQuantity(listing.getQuantity());
+            m.setAllocatedQuantity(cand.getAllocatedQuantity());
+            m.setSplitAllocation(true);
+            m.setSplitBatchNumber(cand.getSplitBatchNumber());
+            m.setExecutionTimeMs(elapsedMs);
+            m.setStatus(MatchStatus.PROPOSED);
+            saved.add(matchRepository.save(m));
+        }
+
+        auditService.log("SYSTEM", "SPLIT_MATCHES_GENERATED", "FoodListing", listing.getId().toString(),
+                "Generated " + saved.size() + " split allocation proposals across Hyderabad receivers");
+
+        return saved.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     public List<MatchDto> getMatchesForListing(UUID foodListingId) {
@@ -136,18 +201,8 @@ public class MatchingService {
         }
 
         FoodListing listing = match.getFoodListing();
-        match.setStatus(MatchStatus.ACCEPTED);
-        match.setRespondedAt(LocalDateTime.now());
-        if (req != null && req.getNotes() != null) {
-            match.setResponseNotes(req.getNotes());
-        }
-        match = matchRepository.save(match);
 
-        // Update listing status
-        listing.setStatus(FoodStatus.ACCEPTED);
-        foodListingRepository.save(listing);
-
-        // Automatically assign volunteer or pick nearest available
+        // 1. Volunteer assignment
         Volunteer assignedVolunteer = null;
         if (req != null && req.getVolunteerId() != null) {
             assignedVolunteer = volunteerRepository.findById(req.getVolunteerId()).orElse(null);
@@ -159,55 +214,153 @@ public class MatchingService {
             }
         }
 
+        // 2. Create durable double-entry donation transaction with concurrency locking
+        DonationTransaction tx = donationTransactionService.createTransaction(match, assignedVolunteer);
+
+        // 3. Update match status
+        match.setStatus(MatchStatus.ACCEPTED);
+        match.setRespondedAt(LocalDateTime.now());
+        if (req != null && req.getNotes() != null) {
+            match.setResponseNotes(req.getNotes());
+        }
+        match = matchRepository.save(match);
+
+        // 4. Create pickup assignment with synchronous OTPs
         PickupAssignment pickup = new PickupAssignment(match, assignedVolunteer);
+        pickup.setPickupOtp(tx.getPickupOtp());
+        pickup.setDeliveryOtp(tx.getDeliveryOtp());
+        pickup.setStatus(PickupStatus.ASSIGNED);
+
         if (assignedVolunteer != null) {
-            pickup.setStatus(PickupStatus.ASSIGNED);
             assignedVolunteer.setActivePickupsCount(assignedVolunteer.getActivePickupsCount() + 1);
             volunteerRepository.save(assignedVolunteer);
         }
         pickup = pickupAssignmentRepository.save(pickup);
 
+        // 5. Append-only event history: ASSIGNED
+        PickupEvent event = new PickupEvent(
+                pickup,
+                userEmail,
+                "RECEIVER",
+                null,
+                PickupStatus.ASSIGNED,
+                tx.getQuantityReserved(),
+                "SYSTEM_ACCEPT",
+                listing.getLatitude(),
+                listing.getLongitude(),
+                "Match accepted by " + match.getReceiver().getOrganizationName() + ". Transaction created: " + tx.getId()
+        );
+        pickupEventRepository.save(event);
+
+        // 6. Update listing status
         listing.setStatus(FoodStatus.PICKUP_ASSIGNED);
         foodListingRepository.save(listing);
 
-        // Reject other pending proposals for this food listing
-        List<Match> otherMatches = matchRepository.findByFoodListingId(listing.getId());
-        for (Match other : otherMatches) {
-            if (!other.getId().equals(match.getId()) && other.getStatus() != MatchStatus.ACCEPTED) {
-                other.setStatus(MatchStatus.REJECTED);
-                other.setResponseNotes("Food accepted by another receiver");
-                matchRepository.save(other);
+        // 7. Reject other non-split proposals for this batch
+        if (!match.isSplitAllocation()) {
+            List<Match> otherMatches = matchRepository.findByFoodListingId(listing.getId());
+            for (Match other : otherMatches) {
+                if (!other.getId().equals(match.getId()) && other.getStatus() != MatchStatus.ACCEPTED) {
+                    other.setStatus(MatchStatus.REJECTED);
+                    other.setResponseNotes("Food accepted by another receiver");
+                    matchRepository.save(other);
+                }
             }
         }
 
-        // Notify Food Provider
+        // 8. Notifications with secure OTP instructions
+        // Provider gets Pickup OTP to verify volunteer handover
         notificationService.createAndSend(
                 listing.getProvider().getUser(),
-                "Surplus Food Accepted!",
-                match.getReceiver().getOrganizationName() + " has accepted " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName(),
+                "Donation Accepted! Pickup OTP: " + tx.getPickupOtp(),
+                match.getReceiver().getOrganizationName() + " has accepted " + tx.getQuantityReserved() + " " + listing.getUnit()
+                        + " of " + listing.getFoodName() + ". Disclose Pickup OTP [" + tx.getPickupOtp() + "] to volunteer upon handover.",
                 NotificationType.FOOD_ACCEPTED,
                 pickup.getId().toString()
         );
 
-        // Notify Volunteer if assigned
+        // Receiver gets Delivery OTP to verify safe arrival
+        notificationService.createAndSend(
+                match.getReceiver().getUser(),
+                "Pickup Dispatched! Delivery OTP: " + tx.getDeliveryOtp(),
+                "Volunteer dispatched. Provide Delivery OTP [" + tx.getDeliveryOtp() + "] to volunteer only after receiving and inspecting the food.",
+                NotificationType.FOOD_ACCEPTED,
+                pickup.getId().toString()
+        );
+
+        // Volunteer gets pickup notification
         if (assignedVolunteer != null) {
             notificationService.createAndSend(
                     assignedVolunteer.getUser(),
                     "New Pickup Task Assigned",
-                    "Pickup " + listing.getFoodName() + " from " + listing.getProvider().getOrganizationName() + " and deliver to " + match.getReceiver().getOrganizationName(),
+                    "Pickup " + listing.getFoodName() + " from " + listing.getProvider().getOrganizationName()
+                            + " and deliver to " + match.getReceiver().getOrganizationName(),
                     NotificationType.PICKUP_ASSIGNED,
                     pickup.getId().toString()
             );
         }
 
         auditService.log(userEmail, "ACCEPT_MATCH", "Match", match.getId().toString(),
-                "Receiver accepted match. Pickup assignment created: " + pickup.getId());
+                "Receiver accepted match. Transaction: " + tx.getId() + ", Pickup: " + pickup.getId());
 
         try {
             messagingTemplate.convertAndSend("/topic/matches/accepted", mapToDto(match));
         } catch (Exception ignored) {}
 
         return mapToDto(match);
+    }
+
+    @Transactional
+    public MatchDto claimListing(UUID foodListingId, java.util.Map<String, Object> req, String userEmail) {
+        FoodListing listing = foodListingRepository.findById(foodListingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Food listing not found: " + foodListingId));
+
+        if (listing.getStatus() != FoodStatus.AVAILABLE && listing.getStatus() != FoodStatus.RESERVED) {
+            throw new BadRequestException("This food listing is no longer available (Status: " + listing.getStatus() + ")");
+        }
+        if (listing.getRemainingQuantity() <= 0) {
+            throw new BadRequestException("All portions of this food listing have already been claimed");
+        }
+        if (listing.getAvailableUntil() != null && listing.getAvailableUntil().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("This food listing has expired and cannot be claimed");
+        }
+
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        Receiver receiver = null;
+        if (user != null) {
+            receiver = receiverRepository.findByUser(user).orElse(null);
+        }
+        if (receiver == null) {
+            List<Receiver> receivers = receiverRepository.findByIsAvailableTrue();
+            if (!receivers.isEmpty()) {
+                receiver = receivers.get(0);
+            } else {
+                throw new BadRequestException("No registered receiver found to claim this listing");
+            }
+        }
+
+        Receiver finalReceiver = receiver;
+        Match match = matchRepository.findByFoodListingId(listing.getId()).stream()
+                .filter(m -> m.getReceiver().getId().equals(finalReceiver.getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Match m = new Match(listing, finalReceiver, 95.0, 95.0, 95.0, 90.0, 95.0, 95.0, 95.0, 2.5, 15);
+                    m.setRequestedQuantity(listing.getRemainingQuantity());
+                    m.setAllocatedQuantity(listing.getRemainingQuantity());
+                    return matchRepository.save(m);
+                });
+
+        Double qtyToClaim = req != null && req.get("quantity") != null ? Double.valueOf(req.get("quantity").toString()) : listing.getRemainingQuantity();
+        if (qtyToClaim > listing.getRemainingQuantity()) {
+            throw new BadRequestException("Requested quantity (" + qtyToClaim + ") exceeds available remaining quantity (" + listing.getRemainingQuantity() + ")");
+        }
+        match.setAllocatedQuantity(qtyToClaim);
+
+        String notes = req != null && req.get("notes") != null ? req.get("notes").toString() : "Direct community claim via SurplusFlow Dashboard";
+        AcceptMatchRequest acceptReq = new AcceptMatchRequest();
+        acceptReq.setNotes(notes);
+
+        return acceptMatch(match.getId(), acceptReq, userEmail);
     }
 
     @Transactional
@@ -222,12 +375,12 @@ public class MatchingService {
 
         auditService.log(userEmail, "REJECT_MATCH", "Match", match.getId().toString(), "Match rejected: " + reason);
 
-        // Fallback Logic: Trigger notification to next candidate
+        // Cascade Fallback Logic: Notify the next ranked proposed receiver
         FoodListing listing = match.getFoodListing();
         List<Match> pendingMatches = matchRepository.findByFoodListingIdOrderByMatchScoreDesc(listing.getId());
         Match nextMatch = null;
         for (Match candidate : pendingMatches) {
-            if (candidate.getStatus() == MatchStatus.PROPOSED) {
+            if (candidate.getStatus() == MatchStatus.PROPOSED && !candidate.getId().equals(match.getId())) {
                 nextMatch = candidate;
                 break;
             }
@@ -240,21 +393,21 @@ public class MatchingService {
             notificationService.createAndSend(
                     nextMatch.getReceiver().getUser(),
                     "Surplus Food Available (" + nextMatch.getMatchScore() + "% Match)",
-                    "Alternative match: " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName()
+                    "Cascade proposal: " + listing.getQuantity() + " " + listing.getUnit() + " of " + listing.getFoodName()
                             + " available " + nextMatch.getDistanceKm() + " km away.",
                     NotificationType.SUITABLE_RECEIVER_FOUND,
                     nextMatch.getId().toString()
             );
 
             auditService.log("SYSTEM", "FALLBACK_NEXT_RECEIVER", "Match", nextMatch.getId().toString(),
-                    "Top receiver rejected. Fallback notified next receiver: " + nextMatch.getReceiver().getOrganizationName());
+                    "Receiver rejected. Cascade fallback notified next receiver: " + nextMatch.getReceiver().getOrganizationName());
         } else {
-            // Reopen listing status
+            // Reopen listing status to AVAILABLE
             listing.setStatus(FoodStatus.AVAILABLE);
             foodListingRepository.save(listing);
 
             auditService.log("SYSTEM", "FALLBACK_NO_MORE_RECEIVERS", "FoodListing", listing.getId().toString(),
-                    "All ranked receivers rejected. Listing returned to pool.");
+                    "All ranked receivers rejected. Listing returned to available pool.");
         }
 
         return mapToDto(match);
@@ -286,6 +439,12 @@ public class MatchingService {
         dto.setProposedAt(m.getProposedAt());
         dto.setRespondedAt(m.getRespondedAt());
         dto.setResponseNotes(m.getResponseNotes());
+        dto.setAttemptId(m.getAttemptId());
+        dto.setRequestedQuantity(m.getRequestedQuantity());
+        dto.setAllocatedQuantity(m.getAllocatedQuantity());
+        dto.setSplitAllocation(m.isSplitAllocation());
+        dto.setSplitBatchNumber(m.getSplitBatchNumber());
+        dto.setExecutionTimeMs(m.getExecutionTimeMs());
         return dto;
     }
 }

@@ -34,6 +34,12 @@ public class PrototypeTest {
 
     private String failureReason;
 
+    private UUID benchmarkRunId;
+    private String runId;
+
+    @Column(nullable = false)
+    private boolean isSimulation = true;
+
     @Column(name = "test_timestamp", nullable = false)
     private LocalDateTime testTimestamp = LocalDateTime.now();
 
@@ -57,7 +63,17 @@ public class PrototypeTest {
         this.storageSuccess = storageSuccess;
         this.workflowSuccess = workflowSuccess;
         this.failureReason = failureReason;
+        this.isSimulation = true;
         this.testTimestamp = LocalDateTime.now();
+    }
+
+    public PrototypeTest(UUID benchmarkRunId, String runId, String scenarioName, String foodType, Double quantity, Integer availableMinutes,
+                         String locationName, Double distanceKm, String matchedReceiverName, Double matchScore,
+                         Long executionTimeMs, boolean matchSuccess, boolean notificationSuccess,
+                         boolean storageSuccess, boolean workflowSuccess, String failureReason) {
+        this(scenarioName, foodType, quantity, availableMinutes, locationName, distanceKm, matchedReceiverName, matchScore, executionTimeMs, matchSuccess, notificationSuccess, storageSuccess, workflowSuccess, failureReason);
+        this.benchmarkRunId = benchmarkRunId;
+        this.runId = runId;
     }
 
     public UUID getId() { return id; }
@@ -104,6 +120,15 @@ public class PrototypeTest {
 
     public String getFailureReason() { return failureReason; }
     public void setFailureReason(String failureReason) { this.failureReason = failureReason; }
+
+    public UUID getBenchmarkRunId() { return benchmarkRunId; }
+    public void setBenchmarkRunId(UUID benchmarkRunId) { this.benchmarkRunId = benchmarkRunId; }
+
+    public String getRunId() { return runId; }
+    public void setRunId(String runId) { this.runId = runId; }
+
+    public boolean isSimulation() { return isSimulation; }
+    public void setSimulation(boolean simulation) { isSimulation = simulation; }
 
     public LocalDateTime getTestTimestamp() { return testTimestamp; }
     public void setTestTimestamp(LocalDateTime testTimestamp) { this.testTimestamp = testTimestamp; }

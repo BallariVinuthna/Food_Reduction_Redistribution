@@ -14,4 +14,5 @@ public interface ReceiverRepository extends JpaRepository<Receiver, UUID> {
     Optional<Receiver> findByUser(User user);
     Optional<Receiver> findByUserId(UUID userId);
     List<Receiver> findByIsAvailableTrue();
+    List<Receiver> findByVerificationStatus(com.foodredistribution.entity.VerificationStatus status);
 }

@@ -20,4 +20,22 @@ public interface PickupAssignmentRepository extends JpaRepository<PickupAssignme
     List<PickupAssignment> findByStatus(PickupStatus status);
     List<PickupAssignment> findByStatusIn(List<PickupStatus> statuses);
     long countByStatus(PickupStatus status);
+    Optional<PickupAssignment> findByPickupOtp(String pickupOtp);
+    Optional<PickupAssignment> findByDeliveryOtp(String deliveryOtp);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM PickupAssignment p WHERE p.status = 'DELIVERED' AND p.assignedAt IS NOT NULL AND p.deliveredAt IS NOT NULL AND " +
+           "(:startDate IS NULL OR p.deliveredAt >= :startDate) AND " +
+           "(:endDate IS NULL OR p.deliveredAt <= :endDate)")
+    List<PickupAssignment> findCompletedPickupsBetween(
+            @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+            @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
+    );
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(p) FROM PickupAssignment p WHERE p.status = 'FAILED' AND " +
+           "(:startDate IS NULL OR p.assignedAt >= :startDate) AND " +
+           "(:endDate IS NULL OR p.assignedAt <= :endDate)")
+    long countFailedPickupsBetween(
+            @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+            @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
+    );
 }

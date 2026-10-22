@@ -28,6 +28,9 @@ public class DataInitializer implements CommandLineRunner {
     private final SystemIdeaRepository systemIdeaRepository;
     private final BaselineMetricRepository baselineMetricRepository;
     private final AdminConfigRepository adminConfigRepository;
+    private final DonationTransactionRepository donationTransactionRepository;
+    private final PickupEventRepository pickupEventRepository;
+    private final FieldWasteRecordRepository fieldWasteRecordRepository;
     private final PasswordEncoder passwordEncoder;
     private final AnalyticsService analyticsService;
 
@@ -39,6 +42,9 @@ public class DataInitializer implements CommandLineRunner {
                            FoodSafetyCheckRepository foodSafetyCheckRepository,
                            MatchRepository matchRepository,
                            PickupAssignmentRepository pickupAssignmentRepository,
+                           DonationTransactionRepository donationTransactionRepository,
+                           PickupEventRepository pickupEventRepository,
+                           FieldWasteRecordRepository fieldWasteRecordRepository,
                            SystemIdeaRepository systemIdeaRepository,
                            BaselineMetricRepository baselineMetricRepository,
                            AdminConfigRepository adminConfigRepository,
@@ -52,6 +58,9 @@ public class DataInitializer implements CommandLineRunner {
         this.foodSafetyCheckRepository = foodSafetyCheckRepository;
         this.matchRepository = matchRepository;
         this.pickupAssignmentRepository = pickupAssignmentRepository;
+        this.donationTransactionRepository = donationTransactionRepository;
+        this.pickupEventRepository = pickupEventRepository;
+        this.fieldWasteRecordRepository = fieldWasteRecordRepository;
         this.systemIdeaRepository = systemIdeaRepository;
         this.baselineMetricRepository = baselineMetricRepository;
         this.adminConfigRepository = adminConfigRepository;
@@ -100,6 +109,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // 3. Additional Stakeholder Users & Profiles in Hyderabad
         // Food Providers
+        FoodProvider p0 = new FoodProvider(adminUser, "PSE Central Operations Hub", "CENTRAL_HUB", "Road No. 1, Banjara Hills, Hyderabad", 17.4156, 78.4487, "PSE System Admin", "+91 9876543210");
+        foodProviderRepository.save(p0);
+
         FoodProvider p1 = new FoodProvider(providerUser, "Taj Banjara Grand Hotel", "HOTEL", "Road No. 1, Banjara Hills, Hyderabad", 17.4156, 78.4487, "Chef Anirudh", "+91 9876543211");
         foodProviderRepository.save(p1);
 
@@ -258,6 +270,12 @@ public class DataInitializer implements CommandLineRunner {
 
         PickupAssignment pCompleted = new PickupAssignment(mCompleted, v1);
         pCompleted.setStatus(PickupStatus.DELIVERED);
+        pCompleted.setPickupOtp("582194");
+        pCompleted.setDeliveryOtp("849201");
+        pCompleted.setPickupOtpVerified(true);
+        pCompleted.setDeliveryOtpVerified(true);
+        pCompleted.setActualQuantityCollected(40.0);
+        pCompleted.setActualQuantityDelivered(40.0);
         pCompleted.setAssignedAt(LocalDateTime.now().minusHours(4));
         pCompleted.setEnRouteAt(LocalDateTime.now().minusHours(3).minusMinutes(50));
         pCompleted.setArrivedAt(LocalDateTime.now().minusHours(3).minusMinutes(35));
@@ -266,12 +284,54 @@ public class DataInitializer implements CommandLineRunner {
         pCompleted.setProofNotes("Delivered in pristine condition to Siddharth Rao at Jubilee Hills center.");
         pickupAssignmentRepository.save(pCompleted);
 
+        // Durable Donation Transaction
+        DonationTransaction txCompleted = new DonationTransaction(l4, p1, r1, 40.0, "MEALS");
+        txCompleted.setVolunteer(v1);
+        txCompleted.setStatus(TransactionStatus.DELIVERED);
+        txCompleted.setVerificationStatus(VerificationStatus.VERIFIED);
+        txCompleted.setPickupOtp("582194");
+        txCompleted.setDeliveryOtp("849201");
+        txCompleted.setPickupOtpVerified(true);
+        txCompleted.setDeliveryOtpVerified(true);
+        txCompleted.setQuantityCollected(40.0);
+        txCompleted.setQuantityDelivered(40.0);
+        txCompleted.setAssignedAt(LocalDateTime.now().minusHours(4));
+        txCompleted.setEnRouteAt(LocalDateTime.now().minusHours(3).minusMinutes(50));
+        txCompleted.setArrivedAt(LocalDateTime.now().minusHours(3).minusMinutes(35));
+        txCompleted.setCollectedAt(LocalDateTime.now().minusHours(3).minusMinutes(30));
+        txCompleted.setDeliveredAt(LocalDateTime.now().minusHours(3));
+        donationTransactionRepository.save(txCompleted);
+
+        // Append-only Pickup Events
+        pickupEventRepository.save(new PickupEvent(pCompleted, "receiver@demo.local", "NGO_RECEIVER", null, PickupStatus.ASSIGNED, 40.0, "MATCH_ACCEPTANCE", 17.4265, 78.4116, "Initial assignment created"));
+        pickupEventRepository.save(new PickupEvent(pCompleted, "volunteer@demo.local", "VOLUNTEER", PickupStatus.ASSIGNED, PickupStatus.EN_ROUTE, 40.0, "STATUS_UPDATE", 17.4200, 78.4400, "Volunteer in transit to Taj Banjara"));
+        pickupEventRepository.save(new PickupEvent(pCompleted, "volunteer@demo.local", "VOLUNTEER", PickupStatus.EN_ROUTE, PickupStatus.ARRIVED, 40.0, "GEO_LOCATION", 17.4156, 78.4487, "Arrived at provider facility"));
+        pickupEventRepository.save(new PickupEvent(pCompleted, "volunteer@demo.local", "VOLUNTEER", PickupStatus.ARRIVED, PickupStatus.COLLECTED, 40.0, "OTP_VERIFIED", 17.4156, 78.4487, "Collected 40 meals; Provider OTP verified [582194]"));
+        pickupEventRepository.save(new PickupEvent(pCompleted, "volunteer@demo.local", "VOLUNTEER", PickupStatus.COLLECTED, PickupStatus.DELIVERED, 40.0, "OTP_VERIFIED", 17.4265, 78.4116, "Delivered 40 meals; Receiver OTP verified [849201]"));
+
         p1.setTotalDonatedMeals(40);
         foodProviderRepository.save(p1);
         r1.setTotalReceivedMeals(40);
         receiverRepository.save(r1);
         v1.setTotalCompletedPickups(1);
         volunteerRepository.save(v1);
+
+        // Seed Sample Demo Field Waste Records (Clearly marked isDemo = true)
+        fieldWasteRecordRepository.save(new FieldWasteRecord(
+                "Taj Banjara Buffet Kitchen Audit", "HOTEL", "Banjara Hills", "COOKED_MEALS",
+                42.5, "KG", LocalDateTime.now().minusDays(2).withHour(12).withMinute(0),
+                LocalDateTime.now().minusDays(2).withHour(15).withMinute(30), "LUNCH_BUFFET",
+                "AUDITOR_PHYSICAL_SCALE", "Certified Auditor Dr. Ramesh", true,
+                "[DEMO DATA] Baseline lunch buffet waste before SurplusFlow intervention"
+        ));
+
+        fieldWasteRecordRepository.save(new FieldWasteRecord(
+                "Cyber Conventions Hall Evening Audit", "MARRIAGE_HALL", "Hitec City", "COOKED_MEALS",
+                78.0, "KG", LocalDateTime.now().minusDays(1).withHour(19).withMinute(0),
+                LocalDateTime.now().minusDays(1).withHour(23).withMinute(30), "DINNER_BANQUET",
+                "KITCHEN_LOG_SHEET", "Supervisor Ananya Rao", true,
+                "[DEMO DATA] Unserved banquet surplus discarded due to unexpected attendee drop"
+        ));
 
         // 5. Seed Module 4 System Ideas
         systemIdeaRepository.save(new SystemIdea(

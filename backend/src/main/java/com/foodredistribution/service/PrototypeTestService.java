@@ -1,5 +1,6 @@
 package com.foodredistribution.service;
 
+import com.foodredistribution.dto.BenchmarkRunDto;
 import com.foodredistribution.dto.PrototypeValidationReportDto;
 import com.foodredistribution.entity.*;
 import com.foodredistribution.matching.MatchingEngine;
@@ -8,8 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PrototypeTestService {
@@ -17,29 +21,33 @@ public class PrototypeTestService {
     private final MatchingEngine matchingEngine;
     private final ReceiverRepository receiverRepository;
     private final PrototypeTestRepository prototypeTestRepository;
+    private final BenchmarkRunRepository benchmarkRunRepository;
     private final FoodProviderRepository foodProviderRepository;
 
     public PrototypeTestService(MatchingEngine matchingEngine,
                                 ReceiverRepository receiverRepository,
                                 PrototypeTestRepository prototypeTestRepository,
+                                BenchmarkRunRepository benchmarkRunRepository,
                                 FoodProviderRepository foodProviderRepository) {
         this.matchingEngine = matchingEngine;
         this.receiverRepository = receiverRepository;
         this.prototypeTestRepository = prototypeTestRepository;
+        this.benchmarkRunRepository = benchmarkRunRepository;
         this.foodProviderRepository = foodProviderRepository;
     }
 
     @Transactional
     public PrototypeValidationReportDto runBenchmarkSimulation() {
-        // Clear previous tests to run a fresh 20-scenario suite
-        prototypeTestRepository.deleteAllInBatch();
+        // Unique run ID for each simulation execution (previous runs preserved!)
+        String timestampPart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        String runId = "SIM-" + timestampPart + "-" + randomSuffix;
 
         List<Receiver> receivers = receiverRepository.findAll();
         FoodProvider provider = foodProviderRepository.findAll().stream().findFirst().orElse(null);
 
         // 20 realistic surplus scenarios across Hyderabad localities
         Object[][] testScenarios = new Object[][]{
-                // Name, Category, Quantity, Minutes, Location, Lat, Lon, Veg
                 {"Banjara Hills Wedding Buffet", "COOKED_MEALS", 120.0, 90, "Road No. 12, Banjara Hills", 17.4156, 78.4350, true},
                 {"Hitec City Tech Park Cafeteria", "COOKED_MEALS", 80.0, 45, "Cyber City, Madhapur", 17.4483, 78.3742, true},
                 {"Jubilee Hills Banquet Lunch", "COOKED_MEALS", 65.0, 150, "Road No. 36, Jubilee Hills", 17.4319, 78.4073, false},
@@ -61,6 +69,14 @@ public class PrototypeTestService {
                 {"Financial District Gala", "COOKED_MEALS", 110.0, 140, "Nanakramguda, Financial Dist", 17.4140, 78.3435, false},
                 {"Charminar Community Feast", "COOKED_MEALS", 150.0, 160, "Ghansi Bazaar, Charminar", 17.3616, 78.4747, false}
         };
+
+        // Create BenchmarkRun
+        BenchmarkRun run = new BenchmarkRun();
+        run.setRunId(runId);
+        run.setExecutedAt(LocalDateTime.now());
+        run.setTotalScenarios(testScenarios.length);
+        run.setSimulation(true);
+        run = benchmarkRunRepository.save(run);
 
         List<PrototypeTest> results = new ArrayList<>();
         long totalExecutionTimeMs = 0;
@@ -117,6 +133,8 @@ public class PrototypeTestService {
             storageSuccessCount++;
 
             PrototypeTest test = new PrototypeTest(
+                    run.getId(),
+                    runId,
                     name, category, qty, mins, address, distKm,
                     matchedReceiver, matchScore, elapsedMs,
                     matchSuccess, notifSuccess, storeSuccess, wfSuccess,
@@ -133,7 +151,35 @@ public class PrototypeTestService {
         double actualStoreRate = Math.round(((double) storageSuccessCount / totalCases) * 1000.0) / 10.0;
         double actualWorkflowRate = Math.round(((double) workflowSuccessCount / totalCases) * 1000.0) / 10.0;
 
+        run.setSuccessfulMatches(successfulMatches);
+        run.setFailedMatches(totalCases - successfulMatches);
+        run.setActualMatchSuccessRate(actualMatchSuccessRate);
+        run.setActualAverageMatchingTimeSeconds(actualAvgMatchTimeSec);
+        run.setActualNotificationSuccessRate(actualNotifSuccessRate);
+        run.setActualDataStorageIntegrityRate(actualStoreRate);
+        run.setActualWorkflowSuccessRate(actualWorkflowRate);
+
+        // Validation Outcome Assessment against targets (Target >= 80%, <= 30s, >= 90%, 100%)
+        String outcome;
+        String recommendation;
+        if (actualMatchSuccessRate >= 80.0 && actualAvgMatchTimeSec <= 30.0 && actualStoreRate >= 100.0) {
+            outcome = "PASS";
+            recommendation = "Benchmark targets empirically verified. Next intervention: Field deployment with 5 active donor kitchens in Hyderabad.";
+        } else if (actualMatchSuccessRate >= 60.0) {
+            outcome = "PARTIAL";
+            recommendation = "Target partially met. Expand receiver search radius from 25km to 30km and add volunteer transit hubs.";
+        } else {
+            outcome = "FAIL";
+            recommendation = "Target not met. Re-calibrate matching weights and expand NGO receiver density in outer suburbs.";
+        }
+
+        run.setValidationOutcome(outcome);
+        run.setRecommendation(recommendation);
+        benchmarkRunRepository.save(run);
+
         PrototypeValidationReportDto report = new PrototypeValidationReportDto();
+        report.setRunId(runId);
+        report.setSimulation(true);
         report.setTotalTestCases(totalCases);
         report.setSuccessfulMatches(successfulMatches);
         report.setFailedMatches(totalCases - successfulMatches);
@@ -142,24 +188,42 @@ public class PrototypeTestService {
         report.setActualNotificationSuccessRate(actualNotifSuccessRate);
         report.setActualDataStorageIntegrityRate(actualStoreRate);
         report.setActualWorkflowSuccessRate(actualWorkflowRate);
-
-        // Validation Outcome Assessment against targets (Target >= 80%, <= 30s, >= 90%, 100%)
-        if (actualMatchSuccessRate >= 80.0 && actualAvgMatchTimeSec <= 30.0 && actualStoreRate >= 100.0) {
-            report.setValidationOutcome("PASS");
-            report.setNextInterventionRecommendation("Benchmark targets met. Next intervention: Conduct pilot test with 5 active donor kitchens in Hyderabad.");
-        } else if (actualMatchSuccessRate >= 60.0) {
-            report.setValidationOutcome("PARTIAL");
-            report.setNextInterventionRecommendation("Target partially met. Expand receiver search radius from 25km to 30km and add more volunteer routing hubs.");
-        } else {
-            report.setValidationOutcome("FAIL");
-            report.setNextInterventionRecommendation("Target not met. Re-calibrate matching weights and expand NGO receiver density in outer suburbs.");
-        }
-
+        report.setValidationOutcome(outcome);
+        report.setNextInterventionRecommendation(recommendation);
         report.setScenarios(results);
+
         return report;
     }
 
-    public List<PrototypeTest> getTestResults() {
+    public List<PrototypeTest> getTestResults(String runId) {
+        if (runId != null && !runId.isBlank()) {
+            return prototypeTestRepository.findByRunIdOrderByTestTimestampAsc(runId);
+        }
         return prototypeTestRepository.findAllByOrderByTestTimestampDesc();
+    }
+
+    public List<BenchmarkRunDto> getAllBenchmarkRuns() {
+        return benchmarkRunRepository.findAllByOrderByExecutedAtDesc().stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public BenchmarkRunDto mapToDto(BenchmarkRun r) {
+        BenchmarkRunDto dto = new BenchmarkRunDto();
+        dto.setId(r.getId());
+        dto.setRunId(r.getRunId());
+        dto.setExecutedAt(r.getExecutedAt());
+        dto.setTotalScenarios(r.getTotalScenarios());
+        dto.setSuccessfulMatches(r.getSuccessfulMatches());
+        dto.setFailedMatches(r.getFailedMatches());
+        dto.setActualMatchSuccessRate(r.getActualMatchSuccessRate());
+        dto.setActualAverageMatchingTimeSeconds(r.getActualAverageMatchingTimeSeconds());
+        dto.setActualNotificationSuccessRate(r.getActualNotificationSuccessRate());
+        dto.setActualDataStorageIntegrityRate(r.getActualDataStorageIntegrityRate());
+        dto.setActualWorkflowSuccessRate(r.getActualWorkflowSuccessRate());
+        dto.setValidationOutcome(r.getValidationOutcome());
+        dto.setRecommendation(r.getRecommendation());
+        dto.setSimulation(r.isSimulation());
+        return dto;
     }
 }

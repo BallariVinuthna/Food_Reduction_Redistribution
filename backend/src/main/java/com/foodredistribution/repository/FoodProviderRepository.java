@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface FoodProviderRepository extends JpaRepository<FoodProvider, UUID> {
     Optional<FoodProvider> findByUser(User user);
     Optional<FoodProvider> findByUserId(UUID userId);
+    java.util.List<FoodProvider> findByVerificationStatus(com.foodredistribution.entity.VerificationStatus status);
 }

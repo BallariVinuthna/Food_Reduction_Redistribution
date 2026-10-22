@@ -55,8 +55,9 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         }
         logger.warn("Validation error: {}", errors);
+        String message = errors.isEmpty() ? "Validation failed" : "Validation failed: " + String.join(", ", errors.values());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, "Validation failed", errors));
+                .body(new ApiResponse<>(false, message, errors));
     }
 
     @ExceptionHandler(Exception.class)
