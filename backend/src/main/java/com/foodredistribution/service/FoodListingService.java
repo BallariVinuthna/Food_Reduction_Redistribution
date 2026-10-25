@@ -59,20 +59,33 @@ public class FoodListingService {
 
         FoodProvider provider = foodProviderRepository.findByUser(user)
                 .orElseGet(() -> {
-                    if (user.getRole() == com.foodredistribution.entity.Role.ADMIN) {
-                        FoodProvider adminProvider = new FoodProvider(
-                                user,
-                                user.getFullName() != null ? user.getFullName() + " Dispatch" : "PSE Central Operations Hub",
-                                "CENTRAL_HUB",
-                                req.getAddress() != null && !req.getAddress().isBlank() ? req.getAddress() : "Road No. 1, Banjara Hills, Hyderabad",
-                                req.getLatitude() != null ? req.getLatitude() : 17.4156,
-                                req.getLongitude() != null ? req.getLongitude() : 78.4487,
-                                user.getFullName() != null ? user.getFullName() : "Administrator",
-                                req.getContactPhone() != null && !req.getContactPhone().isBlank() ? req.getContactPhone() : "+91 9876543210"
-                        );
-                        return foodProviderRepository.save(adminProvider);
-                    }
-                    throw new BadRequestException("User does not have a registered food provider profile");
+                    String orgName = user.getFullName() != null && !user.getFullName().isBlank()
+                            ? user.getFullName()
+                            : "Surplus Food Redistribution Provider";
+                    String providerType = user.getRole() == com.foodredistribution.entity.Role.ADMIN
+                            ? "CENTRAL_HUB"
+                            : (user.getRole() == com.foodredistribution.entity.Role.NGO_RECEIVER ? "NGO_HUB" : "DONOR_COMMUNITY");
+                    String contactPerson = user.getFullName() != null ? user.getFullName() : "Operations Lead";
+                    String phone = req.getContactPhone() != null && !req.getContactPhone().isBlank()
+                            ? req.getContactPhone()
+                            : (user.getPhone() != null ? user.getPhone() : "+91 9876543210");
+                    String addr = req.getAddress() != null && !req.getAddress().isBlank()
+                            ? req.getAddress()
+                            : "Road No. 1, Banjara Hills, Hyderabad";
+                    double lat = req.getLatitude() != null ? req.getLatitude() : 17.4156;
+                    double lon = req.getLongitude() != null ? req.getLongitude() : 78.4487;
+
+                    FoodProvider autoProvider = new FoodProvider(
+                            user,
+                            orgName,
+                            providerType,
+                            addr,
+                            lat,
+                            lon,
+                            contactPerson,
+                            phone
+                    );
+                    return foodProviderRepository.save(autoProvider);
                 });
 
         LocalDateTime now = LocalDateTime.now();

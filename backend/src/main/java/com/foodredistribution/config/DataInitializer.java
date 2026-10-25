@@ -130,6 +130,9 @@ public class DataInitializer implements CommandLineRunner {
         FoodProvider p4 = new FoodProvider(p4User, "Cyber Conventions & Marriage Hall", "MARRIAGE_HALL", "Hitec City, Madhapur, Hyderabad", 17.4483, 78.3742, "Event Coord. Priya", "+91 9876543216");
         foodProviderRepository.save(p4);
 
+        FoodProvider p5 = new FoodProvider(receiverUser, "Robin Hood Army Surplus Dispatch", "NGO_HUB", "Jubilee Hills Check Post, Hyderabad", 17.4265, 78.4116, "Siddharth Rao", "+91 9876543212");
+        foodProviderRepository.save(p5);
+
         // Receivers (NGOs, Shelters)
         Receiver r1 = new Receiver(receiverUser, "Robin Hood Army - Hyderabad Chapter", "NGO", "Jubilee Hills Check Post, Hyderabad", 17.4265, 78.4116, "Siddharth Rao", "+91 9876543212", 120, "ANY");
         receiverRepository.save(r1);
