@@ -12,6 +12,7 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 import {
   Sliders,
   TrendingUp,
@@ -185,13 +186,16 @@ export const AdminAnalyticsDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#163D2B] via-[#24543B] to-[#163D2B] text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-[#367A50]/40">
         <div>
-          <span className="text-xs font-semibold text-lime-300 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[#DCE9DE] uppercase tracking-wider">
             Operational Intelligence & Impact Dashboard
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">System Impact Analytics</h1>
-          <p className="text-xs text-emerald-200 mt-1 max-w-2xl">
+          <AnimatedPageHeading
+            text="System Impact Analytics"
+            className="text-2xl sm:text-3xl font-extrabold text-white mt-1"
+          />
+          <p className="text-xs text-[#DCE9DE]/90 mt-1 max-w-2xl">
             Real-world persistent operational records, verified OTP handovers, database-backed calculations, and empirical field audits across Hyderabad.
           </p>
         </div>
@@ -200,14 +204,14 @@ export const AdminAnalyticsDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportSummaryCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-white text-xs font-semibold border border-emerald-600/40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#367A50] hover:bg-[#24543B] text-white text-xs font-semibold border border-[#79A786]/40 transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Summary CSV</span>
           </button>
           <button
             onClick={handleExportTransactionsCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-800/80 hover:bg-teal-700 text-white text-xs font-semibold border border-teal-600/40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#24543B] hover:bg-[#163D2B] text-white text-xs font-semibold border border-[#79A786]/40 transition-colors cursor-pointer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>Transactions CSV</span>
@@ -216,9 +220,12 @@ export const AdminAnalyticsDashboard: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-          <Filter className="w-4 h-4 text-emerald-600" />
+      <div
+        className="p-4 rounded-3xl bg-white border border-[#DCE9DE] shadow-xs flex flex-wrap items-center justify-between gap-4 animate-box-rise"
+        style={{ animationDelay: '260ms' }}
+      >
+        <div className="flex items-center gap-2 text-xs font-bold text-[#20352A]">
+          <Filter className="w-4 h-4 text-[#367A50]" />
           <span>Filter Operational Records:</span>
         </div>
 
@@ -229,7 +236,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-emerald-500"
+              className="text-xs border border-[#DCE9DE] rounded-lg px-2 py-1.5 focus:outline-[#367A50]"
               placeholder="Start Date"
             />
             <span className="text-xs text-slate-400">to</span>
@@ -237,7 +244,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-emerald-500"
+              className="text-xs border border-[#DCE9DE] rounded-lg px-2 py-1.5 focus:outline-[#367A50]"
               placeholder="End Date"
             />
           </div>
@@ -245,7 +252,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
           <select
             value={locality}
             onChange={(e) => setLocality(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-emerald-500"
+            className="text-xs border border-[#DCE9DE] rounded-lg px-2.5 py-1.5 focus:outline-[#367A50]"
           >
             <option value="">All Hyderabad Localities</option>
             <option value="Banjara Hills">Banjara Hills</option>
@@ -262,7 +269,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-emerald-500"
+            className="text-xs border border-[#DCE9DE] rounded-lg px-2.5 py-1.5 focus:outline-[#367A50]"
           >
             <option value="">All Categories</option>
             <option value="COOKED_MEALS">Cooked Meals</option>
@@ -281,7 +288,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
                 setLocality('');
                 setCategory('');
               }}
-              className="text-xs text-emerald-700 hover:text-emerald-900 underline font-semibold cursor-pointer"
+              className="text-xs text-[#367A50] hover:text-[#163D2B] underline font-semibold cursor-pointer"
             >
               Reset Filters
             </button>
@@ -306,60 +313,72 @@ export const AdminAnalyticsDashboard: React.FC = () => {
       {/* KPI Cards Ribbon */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Card 1: Verified Delivered Meals */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-2xs">
+        <div
+          className="p-5 rounded-3xl bg-white border border-[#DCE9DE] shadow-2xs animate-box-rise"
+          style={{ animationDelay: '320ms' }}
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-semibold text-slate-700">Verified Delivered Meals</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="font-semibold text-[#20352A]">Verified Delivered Meals</span>
+            <CheckCircle2 className="w-4 h-4 text-[#367A50]" />
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#20352A] mt-2">
             {hasData ? (analytics?.actualVerifiedDeliveredMeals ?? 0) : '0'} <span className="text-sm font-normal text-slate-500">meals</span>
           </p>
-          <div className="mt-2 text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+          <div className="mt-2 text-[11px] text-[#367A50] font-medium flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#367A50]"></span>
             <span>OTP Verified Handover Audit</span>
           </div>
         </div>
 
         {/* Card 2: Food Waste Avoided (Estimated Index) */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-2xs">
+        <div
+          className="p-5 rounded-3xl bg-white border border-[#DCE9DE] shadow-2xs animate-box-rise"
+          style={{ animationDelay: '400ms' }}
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-semibold text-slate-700">Estimated Waste Avoided</span>
-            <TrendingUp className="w-4 h-4 text-teal-600" />
+            <span className="font-semibold text-[#20352A]">Estimated Waste Avoided</span>
+            <TrendingUp className="w-4 h-4 text-[#24543B]" />
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#20352A] mt-2">
             {hasData ? (analytics?.estimatedFoodWasteAvoidedKg ?? 0).toFixed(1) : '0.0'} <span className="text-sm font-normal text-slate-500">kg</span>
           </p>
           <div className="mt-2 text-[10px] text-slate-500 flex items-start gap-1">
-            <Info className="w-3 h-3 text-teal-600 shrink-0 mt-0.5" />
+            <Info className="w-3 h-3 text-[#367A50] shrink-0 mt-0.5" />
             <span>Formula: 0.4 kg/meal standard EPA diversion model</span>
           </div>
         </div>
 
         {/* Card 3: Estimated Economic Value (Estimated Index) */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-2xs">
+        <div
+          className="p-5 rounded-3xl bg-white border border-[#DCE9DE] shadow-2xs animate-box-rise"
+          style={{ animationDelay: '480ms' }}
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-semibold text-slate-700">Estimated Economic Value</span>
-            <IndianRupee className="w-4 h-4 text-lime-600" />
+            <span className="font-semibold text-[#20352A]">Estimated Economic Value</span>
+            <IndianRupee className="w-4 h-4 text-[#367A50]" />
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#20352A] mt-2">
             ₹{hasData ? (analytics?.estimatedValueSavedInr?.toLocaleString() ?? '0') : '0'}
           </p>
           <div className="mt-2 text-[10px] text-slate-500 flex items-start gap-1">
-            <Info className="w-3 h-3 text-lime-600 shrink-0 mt-0.5" />
+            <Info className="w-3 h-3 text-[#367A50] shrink-0 mt-0.5" />
             <span>Formula: ₹60 / meal commercial baseline value</span>
           </div>
         </div>
 
         {/* Card 4: Empirical Field Waste Logged */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-2xs">
+        <div
+          className="p-5 rounded-3xl bg-white border border-[#DCE9DE] shadow-2xs animate-box-rise"
+          style={{ animationDelay: '560ms' }}
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-semibold text-slate-700">Field-Observed Waste</span>
-            <ClipboardList className="w-4 h-4 text-purple-600" />
+            <span className="font-semibold text-[#20352A]">Field-Observed Waste</span>
+            <ClipboardList className="w-4 h-4 text-[#79A786]" />
           </div>
-          <p className="text-3xl font-extrabold text-slate-900 mt-2">
+          <p className="text-3xl font-extrabold text-[#20352A] mt-2">
             {(analytics?.fieldObservedWasteKg ?? 0).toFixed(1)} <span className="text-sm font-normal text-slate-500">kg</span>
           </p>
-          <div className="mt-2 text-[11px] text-purple-700 font-medium">
+          <div className="mt-2 text-[11px] text-[#24543B] font-medium">
             Empirical Physical Audits
           </div>
         </div>

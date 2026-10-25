@@ -68,6 +68,24 @@ public class SurplusPredictionRecord {
     @Column(name = "influencing_factors", length = 500)
     private String influencingFactors;
 
+    @Column(name = "quantity_remaining")
+    private Double quantityRemaining = 0.0;
+
+    @Column(name = "customers_served")
+    private Integer customersServed;
+
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
+    @Column(name = "safety_margin_pct")
+    private Double safetyMarginPct = 10.0;
+
+    @Column(name = "donation_listing_id", length = 36)
+    private String donationListingId;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
     @Column(name = "record_date", nullable = false)
     private LocalDate recordDate = LocalDate.now();
 
@@ -90,9 +108,19 @@ public class SurplusPredictionRecord {
         this.mealPeriod = mealPeriod;
         this.quantityPrepared = quantityPrepared;
         this.quantityConsumed = quantityConsumed;
-        this.quantityDonated = quantityDonated;
-        this.quantityDiscarded = quantityDiscarded;
-        this.unit = unit;
+        this.quantityDonated = quantityDonated != null ? quantityDonated : 0.0;
+        this.quantityDiscarded = quantityDiscarded != null ? quantityDiscarded : 0.0;
+        this.unit = unit != null ? unit : "PORTIONS";
+        recalculateRemaining();
+    }
+
+    public void recalculateRemaining() {
+        double prep = this.quantityPrepared != null ? this.quantityPrepared : 0.0;
+        double cons = this.quantityConsumed != null ? this.quantityConsumed : 0.0;
+        double don = this.quantityDonated != null ? this.quantityDonated : 0.0;
+        double disc = this.quantityDiscarded != null ? this.quantityDiscarded : 0.0;
+        double rem = prep - (cons + don + disc);
+        this.quantityRemaining = Math.max(0.0, Math.round(rem * 100.0) / 100.0);
     }
 
     // Getters and Setters
@@ -158,4 +186,22 @@ public class SurplusPredictionRecord {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Double getQuantityRemaining() { return quantityRemaining; }
+    public void setQuantityRemaining(Double quantityRemaining) { this.quantityRemaining = quantityRemaining; }
+
+    public Integer getCustomersServed() { return customersServed; }
+    public void setCustomersServed(Integer customersServed) { this.customersServed = customersServed; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
+    public Double getSafetyMarginPct() { return safetyMarginPct; }
+    public void setSafetyMarginPct(Double safetyMarginPct) { this.safetyMarginPct = safetyMarginPct; }
+
+    public String getDonationListingId() { return donationListingId; }
+    public void setDonationListingId(String donationListingId) { this.donationListingId = donationListingId; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -362,3 +362,142 @@ export interface AiChatMessage {
   timestamp: string;
 }
 
+export interface FoodPreparationRecord {
+  id: string;
+  providerId: string;
+  providerName?: string;
+  foodItemName: string;
+  foodCategory: string;
+  dayOfWeek: string;
+  mealPeriod: 'BREAKFAST' | 'LUNCH' | 'SNACKS' | 'DINNER' | string;
+  recordDate: string;
+  quantityPrepared: number;
+  quantityConsumed: number;
+  quantityDonated: number;
+  quantityDiscarded: number;
+  quantityRemaining: number;
+  customersServed?: number;
+  unit: string;
+  notes?: string;
+  safetyMarginPct?: number;
+  donationListingId?: string;
+  predictedDemand?: number;
+  suggestedPrepQuantity?: number;
+  predictedSurplus?: number;
+  confidenceMin?: number;
+  confidenceMax?: number;
+  forecastAccuracyPct?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FoodPreparationEntryPayload {
+  foodItemName: string;
+  foodCategory: string;
+  recordDate: string;
+  mealPeriod: string;
+  quantityPrepared: number;
+  quantityConsumed: number;
+  quantityDonated?: number;
+  quantityDiscarded?: number;
+  customersServed?: number;
+  unit: string;
+  notes?: string;
+  safetyMarginPct?: number;
+}
+
+export interface SmartPreparationPrediction {
+  providerId: string;
+  providerName: string;
+  foodItemName: string;
+  mealPeriod: string;
+  targetDate: string;
+  dayOfWeek: string;
+  unit: string;
+  predictedDemand: number;
+  recommendedPreparation: number;
+  safetyMarginPct: number;
+  previouslyPreparedAvg: number;
+  averageQuantityServed: number;
+  averageLeftoverQuantity: number;
+  estimatedAvoidableSurplus: number;
+  confidenceLevel: 'NO_DATA' | 'LOW' | 'MODERATE' | 'HIGH' | string;
+  confidenceMin: number;
+  confidenceMax: number;
+  historicalObservationsCount: number;
+  dayOfWeekObservationsCount: number;
+  forecastAccuracyPct: number;
+  explanation: string;
+  wastePreventionRecommendations: string[];
+  cautionNotice: string;
+  isSufficientData: boolean;
+}
+
+export interface RecurringLeftoverItem {
+  foodItemName: string;
+  foodCategory: string;
+  primaryMealPeriod: string;
+  averagePrepared: number;
+  averageServed: number;
+  averageLeftover: number;
+  leftoverRatePct: number;
+  suggestedTrimQuantity: number;
+  recommendation: string;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface DailyPreparationSummary {
+  date: string;
+  dayOfWeek: string;
+  prepared: number;
+  served: number;
+  leftover: number;
+  donated: number;
+  discarded: number;
+}
+
+export interface ActualVsPredictedPoint {
+  date: string;
+  foodItemName: string;
+  actualDemand: number;
+  predictedDemand: number;
+  absoluteError: number;
+}
+
+export interface AdvisorEvaluationMetrics {
+  meanAbsoluteError: number;
+  meanAbsolutePercentageError: number;
+  forecastAccuracyPct: number;
+  evaluatedRecordsCount: number;
+  isSufficientEvaluationData: boolean;
+  interpretationMessage: string;
+  recentComparisons: ActualVsPredictedPoint[];
+}
+
+export interface AdvisorInsight {
+  title: string;
+  description: string;
+  category: string;
+  severity: 'WARNING' | 'TIP' | 'SUCCESS' | 'INFO';
+}
+
+export interface PreparationAdvisorSummary {
+  providerId: string;
+  providerName: string;
+  totalPrepared: number;
+  totalServed: number;
+  totalDonated: number;
+  totalDiscarded: number;
+  totalRemaining: number;
+  estimatedAvoidableSurplus: number;
+  overallLeftoverRatePct: number;
+  totalRecordsLogged: number;
+  daysWithDataCount: number;
+  recurringLeftoverItems: RecurringLeftoverItem[];
+  dailyTrends: DailyPreparationSummary[];
+  mealPeriodDistribution: Record<string, number>;
+  categoryDistribution: Record<string, number>;
+  evaluationMetrics: AdvisorEvaluationMetrics;
+  actionableInsights: AdvisorInsight[];
+}
+

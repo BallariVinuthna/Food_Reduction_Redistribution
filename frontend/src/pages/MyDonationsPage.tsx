@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FoodListing } from '../types';
 import { api } from '../services/api';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 import {
   Package,
   PlusCircle,
@@ -39,16 +40,17 @@ export const MyDonationsPage: React.FC<MyDonationsPageProps> = ({ onNavigate }) 
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE9DE] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-extrabold text-[#087B46] uppercase tracking-wider">
+          <span className="text-xs font-extrabold text-[#367A50] uppercase tracking-wider">
             Provider Management
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-            My Surplus Food Donations
-          </h1>
+          <AnimatedPageHeading
+            text="My Surplus Food Donations"
+            className="text-2xl sm:text-3xl font-extrabold text-[#20352A] mt-1"
+          />
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Review listed batches, track portions reserved by NGO receivers, and monitor volunteer dispatch status.
           </p>
@@ -56,15 +58,18 @@ export const MyDonationsPage: React.FC<MyDonationsPageProps> = ({ onNavigate }) 
 
         <button
           onClick={() => onNavigate('create-donation')}
-          className="px-5 py-2.5 rounded-2xl bg-[#087B46] hover:bg-[#066538] text-white text-xs font-bold shadow-md shadow-emerald-950/20 transition-all flex items-center gap-2 self-start md:self-center shrink-0"
+          className="px-5 py-2.5 rounded-2xl bg-[#367A50] hover:bg-[#24543B] text-white text-xs font-bold shadow-md shadow-[#163D2B]/20 transition-all flex items-center gap-2 self-start md:self-center shrink-0"
         >
-          <PlusCircle className="w-4 h-4 text-[#8BE34B]" />
+          <PlusCircle className="w-4 h-4 text-[#DCE9DE]" />
           <span>New Surplus Batch</span>
         </button>
       </div>
 
       {/* Donations Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+      <div
+        className="bg-white rounded-3xl border border-[#DCE9DE] shadow-sm overflow-hidden animate-box-rise"
+        style={{ animationDelay: '280ms' }}
+      >
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-extrabold text-slate-900 text-sm">Donation History & Allocations</h3>
           <button

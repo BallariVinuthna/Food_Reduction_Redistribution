@@ -182,7 +182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </div>
             <h3 className="font-bold text-base text-slate-900">Zero Waste Redistribution</h3>
             <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Food delivered to shelters. Platform updates food waste avoided, carbon diversion, and Module 5 metrics.
+              Food delivered to shelters. Platform updates food waste avoided, carbon diversion, and validation metrics.
             </p>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs text-lime-700 font-medium">
               <CheckCircle2 className="w-4 h-4" />

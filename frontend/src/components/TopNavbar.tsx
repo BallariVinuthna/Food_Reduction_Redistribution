@@ -97,13 +97,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     : 'Administrator';
 
   return (
-    <header className="sticky top-0 z-20 bg-white border-b border-slate-200/90 shadow-2xs">
+    <header className="sticky top-0 z-20 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#DCE9DE] shadow-2xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
         {/* Left Side: Mobile Menu Button + Search Field */}
         <div className="flex items-center gap-3 flex-1 max-w-2xl">
           <button
             onClick={openMobileMenu}
-            className="md:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="md:hidden p-2 rounded-xl text-[#24543B] hover:text-[#163D2B] hover:bg-[#DCE9DE]/50 transition-colors"
             aria-label="Open Navigation"
           >
             <Menu className="w-5 h-5" />
@@ -111,13 +111,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
           {/* Wide Search Bar matching prompt */}
           <div className="relative w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#79A786] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search for food, locations, NGOs..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-50/90 hover:bg-slate-100/70 focus:bg-white border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-[#087B46]/20 focus:border-[#087B46]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-full bg-[#F2F7F1] hover:bg-[#DCE9DE]/40 focus:bg-[#FFFFFF] border border-[#DCE9DE] text-xs sm:text-sm text-[#20352A] placeholder-[#79A786] transition-all focus:outline-none focus:ring-2 focus:ring-[#367A50]/20 focus:border-[#367A50]"
             />
           </div>
         </div>
@@ -128,11 +128,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="relative" ref={locationDropdownRef}>
             <button
               onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-colors"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#DCE9DE] bg-[#F2F7F1] hover:bg-[#DCE9DE]/50 text-xs font-semibold text-[#20352A] transition-colors"
             >
-              <MapPin className="w-3.5 h-3.5 text-[#087B46]" />
+              <MapPin className="w-3.5 h-3.5 text-[#367A50]" />
               <span>{selectedLocation}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#79A786]" />
             </button>
 
             {isLocationDropdownOpen && (
@@ -289,7 +289,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     className="w-full text-left px-4 py-2 text-xs text-emerald-800 hover:bg-emerald-50 flex items-center gap-2.5 font-semibold"
                   >
                     <ShieldCheck className="w-4 h-4 text-[#087B46]" />
-                    <span>Module 5 Validation Simulator</span>
+                    <span>Validation Simulator</span>
                   </button>
                 </div>
 

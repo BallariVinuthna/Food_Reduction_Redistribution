@@ -86,15 +86,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between overflow-y-auto select-none">
+    <div className="h-full flex flex-col justify-between overflow-y-auto select-none bg-white">
       {/* Top Header Logo */}
       <div>
-        <div className="p-5 pb-4 flex items-center justify-between border-b border-emerald-950/60">
+        <div className="p-5 pb-4 flex items-center justify-between border-b border-[#DCE9DE]">
           <button
             onClick={() => handleNavClick('dashboard')}
             className="flex items-center gap-3 text-left group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-lime-500 flex items-center justify-center text-white shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#367A50] to-[#24543B] border border-[#79A786]/30 flex items-center justify-center text-white shadow-md shadow-[#163D2B]/10 group-hover:scale-105 transition-transform">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -102,17 +102,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="w-6 h-6 text-emerald-950"
+                className="w-6 h-6 text-[#DCE9DE]"
               >
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" fill="#8BE34B" />
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 12" stroke="#032C20" strokeWidth="2.5" />
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" fill="#79A786" />
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 12" stroke="#163D2B" strokeWidth="2.5" />
               </svg>
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-extrabold tracking-tight text-white">SurplusFlow</span>
+                <span className="text-xl font-extrabold tracking-tight text-[#20352A]">SurplusFlow</span>
               </div>
-              <p className="text-[10px] text-emerald-400/80 font-medium tracking-wide">
+              <p className="text-[10px] text-[#367A50] font-medium tracking-wide">
                 Food Today, Brighter Tomorrows.
               </p>
             </div>
@@ -121,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Close button on mobile */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden p-1.5 rounded-lg text-emerald-400 hover:text-white hover:bg-emerald-900/50"
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {sections.map((sec, secIdx) => (
             <div key={secIdx}>
               <div className="px-3 pb-1.5">
-                <p className="text-[10px] font-bold tracking-wider text-emerald-400/60 uppercase">
+                <p className="text-[10px] font-bold tracking-wider text-[#79A786] uppercase">
                   {sec.title}
                 </p>
               </div>
@@ -147,23 +147,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => handleNavClick(item.id)}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all relative group ${
                         isActive
-                          ? 'bg-[#087B46] text-white shadow-sm shadow-emerald-950/30'
-                          : 'text-emerald-100/70 hover:text-white hover:bg-emerald-900/35'
+                          ? 'bg-[#F2F7F1] text-[#163D2B] font-bold border border-[#DCE9DE] shadow-xs'
+                          : 'text-[#20352A]/80 hover:text-[#163D2B] hover:bg-[#F2F7F1]'
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 bg-[#8BE34B] rounded-r-full" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 bg-[#367A50] rounded-r-full" />
                       )}
                       <div className="flex items-center gap-2.5 truncate">
                         <Icon
                           className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
-                            isActive ? 'text-[#8BE34B]' : 'text-emerald-300/60 group-hover:text-emerald-300'
+                            isActive ? 'text-[#367A50]' : 'text-[#79A786] group-hover:text-[#367A50]'
                           }`}
                         />
                         <span className="truncate">{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#8BE34B] text-[#032C20]">
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#367A50] text-[#FFFFFF]">
                           {item.badge}
                         </span>
                       )}
@@ -177,15 +177,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Botanical Banner */}
-      <div className="p-3 mx-3 mb-3 rounded-2xl bg-gradient-to-b from-emerald-950/40 to-emerald-950/90 border border-emerald-800/40 overflow-hidden relative group">
+      <div className="p-3 mx-3 mb-3 rounded-2xl bg-[#F2F7F1] border border-[#DCE9DE] overflow-hidden relative group">
         <div className="relative z-10 flex flex-col items-center text-center">
-          <h4 className="text-xs font-bold text-emerald-100 leading-snug">
+          <h4 className="text-xs font-bold text-[#163D2B] leading-snug">
             Good Food
           </h4>
-          <h4 className="text-xs font-bold text-[#8BE34B] leading-snug">
+          <h4 className="text-xs font-bold text-[#367A50] leading-snug">
             Stronger Communities
           </h4>
-          <p className="text-[10px] text-emerald-300/80 font-medium mt-0.5">
+          <p className="text-[10px] text-[#79A786] font-medium mt-0.5">
             Hyderabad Metro Operations
           </p>
         </div>
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <aside className="hidden md:block w-64 bg-[#032C20] text-white shrink-0 h-screen sticky top-0 border-r border-emerald-950 z-30 shadow-2xl">
+      <aside className="hidden md:block w-64 bg-white text-[#20352A] shrink-0 h-screen sticky top-0 border-r border-[#DCE9DE] z-30 shadow-xs">
         {sidebarContent}
       </aside>
 
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <div
-        className={`fixed inset-y-0 left-0 w-72 bg-[#032C20] text-white z-50 md:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${
+        className={`fixed inset-y-0 left-0 w-72 bg-white text-[#20352A] z-50 md:hidden border-r border-[#DCE9DE] transform transition-transform duration-300 ease-in-out shadow-2xl ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

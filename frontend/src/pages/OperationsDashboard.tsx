@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   RefreshCw,
 } from 'lucide-react';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 
 interface OperationsDashboardProps {
   onNavigate: (tab: string) => void;
@@ -41,14 +42,17 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
   const [selectedClaimListing, setSelectedClaimListing] = useState<FoodListing | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [timeFilter, setTimeFilter] = useState<'month' | 'week' | 'year'>('month');
+  const [impactViewMode, setImpactViewMode] = useState<'prediction' | 'actual'>('prediction');
+  const [selectedMonth, setSelectedMonth] = useState<string>('Oct 2026');
+  const [showMonthDropdown, setShowMonthDropdown] = useState<boolean>(false);
 
   // Realistic mock listings matching prompt design if API is loading/empty
   const fallbackListings: FoodListing[] = [
     {
       id: 'f1',
       providerId: 'p1',
-      providerOrganizationName: 'Hotel Taj Deccan',
-      foodName: 'Veg Biryani',
+      providerOrganizationName: 'Taj Banjara Kitchens',
+      foodName: 'Royal Buffet Steamed Rice & Dal Makhani',
       foodCategory: 'COOKED_MEALS',
       quantity: 50,
       unit: 'servings',
@@ -61,7 +65,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
       foodCondition: 'FRESHLY_PREPARED',
       vegetarian: true,
       storageCondition: 'HEATED_CONTAINER',
-      photoUrl: '/assets/veg_biryani.jpg',
+      photoUrl: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80',
       status: 'AVAILABLE',
       urgencyLevel: 'HIGH',
       availableMinutesRemaining: 120,
@@ -71,11 +75,11 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
     {
       id: 'f2',
       providerId: 'p2',
-      providerOrganizationName: 'Bakery Bliss',
-      foodName: 'Dinner Rolls',
+      providerOrganizationName: 'Karachi Bakery Artisanal',
+      foodName: 'Artisan Sourdough Loaves & Multigrain Breads',
       foodCategory: 'BAKERY_BREAD',
-      quantity: 40,
-      unit: 'servings',
+      quantity: 35,
+      unit: 'packets',
       preparationTime: new Date(Date.now() - 7200000).toISOString(),
       availableFrom: new Date().toISOString(),
       availableUntil: new Date(Date.now() + 14400000).toISOString(),
@@ -85,7 +89,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
       foodCondition: 'FRESHLY_PREPARED',
       vegetarian: true,
       storageCondition: 'ROOM_TEMP',
-      photoUrl: '/assets/dinner_rolls.jpg',
+      photoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
       status: 'AVAILABLE',
       urgencyLevel: 'MEDIUM',
       availableMinutesRemaining: 240,
@@ -95,21 +99,21 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
     {
       id: 'f3',
       providerId: 'p3',
-      providerOrganizationName: 'Cloud Kitchen Co.',
-      foodName: 'Chicken Curry',
+      providerOrganizationName: 'Paradise Biryani Hub',
+      foodName: 'Hyderabadi Veg Dum Biryani & Mirchi Ka Salan',
       foodCategory: 'COOKED_MEALS',
-      quantity: 35,
+      quantity: 45,
       unit: 'servings',
       preparationTime: new Date(Date.now() - 3600000).toISOString(),
       availableFrom: new Date().toISOString(),
       availableUntil: new Date(Date.now() + 10800000).toISOString(),
-      address: 'Madhapur, Hyderabad',
-      latitude: 17.4483,
-      longitude: 78.3742,
+      address: 'MG Road, Secunderabad',
+      latitude: 17.4411,
+      longitude: 78.4983,
       foodCondition: 'FRESHLY_PREPARED',
-      vegetarian: false,
+      vegetarian: true,
       storageCondition: 'HEATED_CONTAINER',
-      photoUrl: '/assets/chicken_curry.jpg',
+      photoUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
       status: 'AVAILABLE',
       urgencyLevel: 'HIGH',
       availableMinutesRemaining: 180,
@@ -119,48 +123,48 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
     {
       id: 'f4',
       providerId: 'p4',
-      providerOrganizationName: 'GreenBite Cafe',
-      foodName: 'Fresh Salads',
+      providerOrganizationName: 'Rythu Bazaar Mandi',
+      foodName: 'Farm Fresh Tomatoes & Crisp Cucumbers',
       foodCategory: 'FRESH_PRODUCE',
-      quantity: 25,
-      unit: 'servings',
+      quantity: 30,
+      unit: 'kg',
       preparationTime: new Date(Date.now() - 1800000).toISOString(),
       availableFrom: new Date().toISOString(),
-      availableUntil: new Date(Date.now() + 3600000).toISOString(),
+      availableUntil: new Date(Date.now() + 18000000).toISOString(),
       address: 'HITEC City, Hyderabad',
       latitude: 17.4435,
       longitude: 78.3772,
-      foodCondition: 'CHILLED',
+      foodCondition: 'EXCELLENT',
       vegetarian: true,
-      storageCondition: 'REFRIGERATED',
-      photoUrl: '/assets/fresh_salads.jpg',
+      storageCondition: 'ROOM_TEMP',
+      photoUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
       status: 'AVAILABLE',
-      urgencyLevel: 'CRITICAL',
-      availableMinutesRemaining: 60,
+      urgencyLevel: 'LOW',
+      availableMinutesRemaining: 360,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
     {
       id: 'f5',
       providerId: 'p5',
-      providerOrganizationName: 'Event Caterers',
-      foodName: 'Packed Meals',
-      foodCategory: 'COOKED_MEALS',
-      quantity: 60,
-      unit: 'servings',
+      providerOrganizationName: 'Metro Cash & Carry Hub',
+      foodName: 'Sealed Organic Basmati Rice Bags (5 kg)',
+      foodCategory: 'PACKAGED_GROCERIES',
+      quantity: 20,
+      unit: 'packets',
       preparationTime: new Date(Date.now() - 3600000).toISOString(),
       availableFrom: new Date().toISOString(),
-      availableUntil: new Date(Date.now() + 18000000).toISOString(),
+      availableUntil: new Date(Date.now() + 86400000).toISOString(),
       address: 'Gachibowli, Hyderabad',
       latitude: 17.4401,
       longitude: 78.3489,
-      foodCondition: 'FRESHLY_PREPARED',
+      foodCondition: 'SEALED_PACKAGED',
       vegetarian: true,
       storageCondition: 'ROOM_TEMP',
-      photoUrl: '/assets/packed_meals.jpg',
+      photoUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80',
       status: 'AVAILABLE',
       urgencyLevel: 'LOW',
-      availableMinutesRemaining: 300,
+      availableMinutesRemaining: 720,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
@@ -210,6 +214,31 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
     );
   });
 
+  // Deduplicate listings by foodName so items never repeat, and guarantee 5 distinct items across categories
+  const uniqueDisplayedListings = React.useMemo(() => {
+    const seen = new Set<string>();
+    const res: FoodListing[] = [];
+    for (const item of displayedListings) {
+      const key = item.foodName.trim().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        res.push(item);
+      }
+    }
+    // If fewer than 5 items, supplement from distinct fallback items
+    if (res.length < 5) {
+      for (const fb of fallbackListings) {
+        const key = fb.foodName.trim().toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          res.push(fb);
+          if (res.length >= 5) break;
+        }
+      }
+    }
+    return res;
+  }, [displayedListings]);
+
   // Calculate distance mock string based on location coordinates
   const getDistanceString = (idx: number, lat?: number) => {
     const distances = ['2.1 km away', '3.4 km away', '4.8 km away', '1.9 km away', '3.2 km away'];
@@ -238,26 +267,32 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
             className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-700 pointer-events-none"
           />
 
-          {/* Deep Green Gradient Overlay for High Readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#032C20]/95 via-[#032C20]/75 to-transparent z-0" />
+          {/* Deep Forest Gradient Overlay for High Readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#163D2B]/95 via-[#24543B]/80 to-transparent z-0" />
 
-          {/* Top Hero Text */}
+          {/* Top Hero Text (Word-by-Word Animated) */}
           <div className="relative z-10 max-w-xl space-y-2">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              Bridging Surplus to <span className="text-[#8BE34B]">Smiles</span>
-            </h1>
-            <p className="text-sm sm:text-base text-emerald-100/90 font-medium leading-relaxed">
-              Connects food providers, NGOs and volunteers to reduce food waste and fight hunger.
+            <AnimatedPageHeading
+              tag="HYDERABAD FOOD NETWORK • SMART OPERATIONS"
+              title="Every meal tells a story."
+              italicSubtitle="Act before surplus spoils."
+              baseDelayMs={60}
+              wordStaggerMs={110}
+            />
+            <p className="text-xs sm:text-sm text-[#DCE9DE]/90 font-medium leading-relaxed animate-word-fade-up" style={{ animationDelay: '380ms' }}>
+              Connects commercial food providers, NGOs and volunteers to reduce food waste and fight hunger.
             </p>
           </div>
 
-          {/* 4 Impact Stat Chips + CTA Buttons */}
+          {/* 4 Impact Stat Chips + CTA Buttons (Staggered Rising Boxes) */}
           <div className="relative z-10 space-y-4 pt-6">
-            {/* 4 Glass Impact Metrics matching design */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {/* Chip 1 */}
-              <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/95 text-slate-900 shadow-md">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+              <div
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#FFFFFF]/95 border border-[#DCE9DE] text-[#20352A] shadow-md animate-box-rise"
+                style={{ animationDelay: '260ms' }}
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#DCE9DE] text-[#163D2B] flex items-center justify-center shrink-0">
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -266,15 +301,18 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       ? Number(analytics.totalQuantityRedistributedMeals).toLocaleString()
                       : (analytics?.totalMealsRedistributed ? Number(analytics.totalMealsRedistributed).toLocaleString() : '12,840')}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                  <div className="text-[10px] text-[#547462] font-semibold mt-0.5 truncate">
                     Meals Shared
                   </div>
                 </div>
               </div>
 
               {/* Chip 2 */}
-              <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/95 text-slate-900 shadow-md">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+              <div
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#FFFFFF]/95 border border-[#DCE9DE] text-[#20352A] shadow-md animate-box-rise"
+                style={{ animationDelay: '340ms' }}
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#DCE9DE] text-[#24543B] flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -283,37 +321,43 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       ? `${Math.round(analytics.foodWasteAvoidedKg).toLocaleString()} kg`
                       : (analytics?.totalWeightSavedKg ? `${Math.round(analytics.totalWeightSavedKg).toLocaleString()} kg` : '5,136 kg')}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                  <div className="text-[10px] text-[#547462] font-semibold mt-0.5 truncate">
                     Food Saved
                   </div>
                 </div>
               </div>
 
               {/* Chip 3 */}
-              <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/95 text-slate-900 shadow-md">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
+              <div
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#FFFFFF]/95 border border-[#DCE9DE] text-[#20352A] shadow-md animate-box-rise"
+                style={{ animationDelay: '420ms' }}
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#DCE9DE] text-[#367A50] flex items-center justify-center shrink-0">
                   <Heart className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-extrabold leading-none truncate">
                     {analytics?.peopleServed ? Number(analytics.peopleServed).toLocaleString() : '3,640'}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                  <div className="text-[10px] text-[#547462] font-semibold mt-0.5 truncate">
                     People Nourished
                   </div>
                 </div>
               </div>
 
               {/* Chip 4 */}
-              <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/95 text-slate-900 shadow-md">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
+              <div
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#FFFFFF]/95 border border-[#DCE9DE] text-[#20352A] shadow-md animate-box-rise"
+                style={{ animationDelay: '500ms' }}
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#DCE9DE] text-[#163D2B] flex items-center justify-center shrink-0">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-extrabold leading-none truncate">
                     {analytics?.matchSuccessRatePercentage ? `${Math.round(analytics.matchSuccessRatePercentage)}%` : (analytics?.pickupSuccessRate ? `${Math.round(analytics.pickupSuccessRate)}%` : '92%')}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                  <div className="text-[10px] text-[#547462] font-semibold mt-0.5 truncate">
                     Success Rate
                   </div>
                 </div>
@@ -324,7 +368,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 onClick={() => onNavigate('create-donation')}
-                className="px-6 py-2.5 rounded-full bg-[#8BE34B] hover:bg-[#7cd43e] text-[#032C20] text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-950/20 hover:scale-102 transition-all flex items-center gap-2"
+                className="px-6 py-2.5 rounded-full bg-[#367A50] hover:bg-[#24543B] text-[#FFFFFF] text-xs sm:text-sm font-extrabold shadow-lg shadow-[#163D2B]/30 hover:scale-102 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <span>Donate Food</span>
                 <ArrowRight className="w-4 h-4" />
@@ -332,17 +376,20 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
 
               <button
                 onClick={() => onNavigate('find-food')}
-                className="px-6 py-2.5 rounded-full bg-white/95 hover:bg-white text-slate-900 text-xs sm:text-sm font-bold shadow-md hover:scale-102 transition-all flex items-center gap-2"
+                className="px-6 py-2.5 rounded-full bg-[#FFFFFF]/95 hover:bg-[#FFFFFF] text-[#20352A] text-xs sm:text-sm font-bold shadow-md hover:scale-102 transition-all flex items-center gap-2 cursor-pointer border border-[#DCE9DE]"
               >
-                <Search className="w-4 h-4 text-slate-600" />
+                <Search className="w-4 h-4 text-[#79A786]" />
                 <span>Find Food Near Me</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Right Live Food Map Card (4 cols on desktop) */}
-        <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between">
+        {/* Right Live Food Map Card (Rising from Bottom) */}
+        <div
+          className="lg:col-span-4 bg-[#FFFFFF] rounded-3xl p-5 border border-[#DCE9DE] shadow-sm flex flex-col justify-between animate-box-rise"
+          style={{ animationDelay: '360ms' }}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 text-[#087B46] flex items-center justify-center">
@@ -394,38 +441,53 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Available Surplus Food 5-in-a-row (8 cols on desktop) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-[#087B46]" />
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
-                Available Surplus Food
-              </h2>
+          {/* Prominent White Banner Card for Header */}
+          <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#FFFFFF] border border-[#DCE9DE] shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#F2F7F1] border border-[#DCE9DE] flex items-center justify-center text-[#367A50] shadow-2xs">
+                <Utensils className="w-5 h-5 text-[#367A50]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-extrabold text-[#20352A] tracking-tight">
+                    Available Surplus Food
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-[#DCE9DE] text-[#163D2B] text-[10px] font-bold">
+                    {uniqueDisplayedListings.length} Active Batches
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#547462] font-medium hidden sm:block">
+                  Verified surplus batches ready for immediate reservation & dispatch
+                </p>
+              </div>
             </div>
             <button
               onClick={() => onNavigate('find-food')}
-              className="text-xs font-bold text-[#087B46] hover:text-[#066538] flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-xl bg-[#367A50] hover:bg-[#24543B] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs hover:shadow cursor-pointer"
             >
-              <span>View All</span>
+              <span>Explore All</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* 5 Food Listing Cards Grid */}
+          {/* 5 Food Listing Cards Grid (Rising Sequentially from Bottom) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5">
-            {displayedListings.slice(0, 5).map((listing, idx) => {
+            {uniqueDisplayedListings.slice(0, 5).map((listing, idx) => {
               const distance = getDistanceString(idx, listing.latitude);
               const pickupWindow = getPickupWindowString(listing.availableMinutesRemaining || 120);
               const isFav = !!favorites[listing.id];
+              const cardPhoto = listing.photoUrl || fallbackListings[idx % fallbackListings.length].photoUrl;
 
               return (
                 <div
                   key={listing.id}
-                  className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+                  className="bg-[#FFFFFF] rounded-2xl border border-[#DCE9DE] shadow-xs hover:border-[#79A786] hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between group animate-box-rise"
+                  style={{ animationDelay: `${420 + idx * 80}ms` }}
                 >
                   {/* Photo & Overlays */}
                   <div className="relative aspect-4/3 w-full bg-slate-100 overflow-hidden">
                     <img
-                      src={listing.photoUrl || fallbackListings[idx % fallbackListings.length].photoUrl}
+                      src={cardPhoto}
                       alt={listing.foodName}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -507,22 +569,98 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
 
         {/* Right Column: Impact This Month + Recent Activity (4 cols on desktop) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Impact This Month Card */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Impact This Month Card (Rising Sequentially) */}
+          <div
+            className="bg-[#FFFFFF] rounded-3xl p-5 border border-[#DCE9DE] shadow-sm space-y-4 animate-box-rise"
+            style={{ animationDelay: '520ms' }}
+          >
+            <div className="flex items-center justify-between relative">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-emerald-50 text-[#087B46] flex items-center justify-center">
                   <Leaf className="w-4 h-4" />
                 </div>
-                <h3 className="font-extrabold text-slate-900 text-sm">Impact This Month</h3>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">Impact This Month</h3>
+                  <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Today: 25 Oct 2026
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
-                <span>Mar 2025</span>
-                <ChevronRight className="w-3 h-3 rotate-90" />
+
+              {/* Month Selector Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-full cursor-pointer transition-colors"
+                >
+                  <Calendar className="w-3 h-3 text-[#087B46]" />
+                  <span>{selectedMonth}</span>
+                  <ChevronRight className={`w-3 h-3 transition-transform ${showMonthDropdown ? '-rotate-90' : 'rotate-90'}`} />
+                </button>
+
+                {showMonthDropdown && (
+                  <div className="absolute right-0 mt-1.5 w-44 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedMonth('Oct 2026'); setShowMonthDropdown(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between ${selectedMonth === 'Oct 2026' ? 'bg-emerald-50 text-[#087B46]' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      <span>Oct 2026 (Current)</span>
+                      {selectedMonth === 'Oct 2026' && <CheckCircle2 className="w-3.5 h-3.5 text-[#087B46]" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedMonth('Sep 2026'); setShowMonthDropdown(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between ${selectedMonth === 'Sep 2026' ? 'bg-emerald-50 text-[#087B46]' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      <span>Sep 2026</span>
+                      {selectedMonth === 'Sep 2026' && <CheckCircle2 className="w-3.5 h-3.5 text-[#087B46]" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedMonth('Aug 2026'); setShowMonthDropdown(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between ${selectedMonth === 'Aug 2026' ? 'bg-emerald-50 text-[#087B46]' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      <span>Aug 2026</span>
+                      {selectedMonth === 'Aug 2026' && <CheckCircle2 className="w-3.5 h-3.5 text-[#087B46]" />}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* 2x2 Metric Grid */}
+            {/* Prediction vs Actual Toggle Pill (Only for Oct 2026 current month) */}
+            {selectedMonth === 'Oct 2026' && (
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setImpactViewMode('prediction')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    impactViewMode === 'prediction'
+                      ? 'bg-white text-[#087B46] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#087B46]" />
+                  <span>Oct 2026 Prediction</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImpactViewMode('actual')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    impactViewMode === 'actual'
+                      ? 'bg-white text-[#087B46] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <span>Actual (To 25 Oct)</span>
+                </button>
+              </div>
+            )}
+
+            {/* Dynamic 2x2 Metric Grid */}
             <div className="grid grid-cols-2 gap-3">
               {/* Metric 1: Meals Shared */}
               <div className="p-3.5 rounded-2xl bg-[#E8F7EE]/60 border border-emerald-100 flex flex-col justify-between">
@@ -531,12 +669,20 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <Utensils className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-[#087B46] flex items-center gap-0.5">
-                    ↑ 24%
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '↑ 28% Forecast' : '↑ 19% MTD')
+                      : (selectedMonth === 'Sep 2026' ? '↑ 12%' : '↑ 8%')}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <div className="text-lg font-black text-slate-900">12.8K</div>
-                  <div className="text-[11px] font-medium text-slate-500">Meals Shared</div>
+                  <div className="text-lg font-black text-slate-900">
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '2,850' : '2,090')
+                      : (selectedMonth === 'Sep 2026' ? '2,420' : '2,150')}
+                  </div>
+                  <div className="text-[11px] font-medium text-slate-500">
+                    {impactViewMode === 'prediction' && selectedMonth === 'Oct 2026' ? 'Projected Meals' : 'Meals Shared'}
+                  </div>
                 </div>
               </div>
 
@@ -547,12 +693,20 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <Leaf className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-[#087B46] flex items-center gap-0.5">
-                    ↑ 32%
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '↑ 35% Forecast' : '↑ 26% MTD')
+                      : (selectedMonth === 'Sep 2026' ? '↑ 14%' : '↑ 9%')}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <div className="text-lg font-black text-slate-900">5,136 kg</div>
-                  <div className="text-[11px] font-medium text-slate-500">Food Saved</div>
+                  <div className="text-lg font-black text-slate-900">
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '1,140 kg' : '836 kg')
+                      : (selectedMonth === 'Sep 2026' ? '968 kg' : '860 kg')}
+                  </div>
+                  <div className="text-[11px] font-medium text-slate-500">
+                    {impactViewMode === 'prediction' && selectedMonth === 'Oct 2026' ? 'Projected Weight' : 'Food Saved'}
+                  </div>
                 </div>
               </div>
 
@@ -563,12 +717,20 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-blue-600 flex items-center gap-0.5">
-                    ↑ 18%
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '↑ 24% Forecast' : '↑ 16% MTD')
+                      : (selectedMonth === 'Sep 2026' ? '↑ 10%' : '↑ 7%')}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <div className="text-lg font-black text-slate-900">3.6K</div>
-                  <div className="text-[11px] font-medium text-slate-500">People Served</div>
+                  <div className="text-lg font-black text-slate-900">
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '2,280' : '1,672')
+                      : (selectedMonth === 'Sep 2026' ? '1,936' : '1,720')}
+                  </div>
+                  <div className="text-[11px] font-medium text-slate-500">
+                    {impactViewMode === 'prediction' && selectedMonth === 'Oct 2026' ? 'Projected People' : 'People Served'}
+                  </div>
                 </div>
               </div>
 
@@ -579,19 +741,46 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <Building2 className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-amber-600 flex items-center gap-0.5">
-                    ↑ 12%
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '↑ 15% Network' : '↑ 10% Active')
+                      : 'Active'}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <div className="text-lg font-black text-slate-900">38</div>
+                  <div className="text-lg font-black text-slate-900">
+                    {selectedMonth === 'Oct 2026'
+                      ? (impactViewMode === 'prediction' ? '18' : '14')
+                      : (selectedMonth === 'Sep 2026' ? '14' : '12')}
+                  </div>
                   <div className="text-[11px] font-medium text-slate-500">Partner NGOs</div>
                 </div>
               </div>
             </div>
+
+            {/* Smart Contextual Banner */}
+            {selectedMonth === 'Oct 2026' && (
+              <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-[#087B46] shrink-0 mt-0.5" />
+                <div className="text-[11px] text-emerald-900 leading-snug font-medium">
+                  {impactViewMode === 'prediction' ? (
+                    <span>
+                      <strong className="font-bold text-[#087B46]">Oct 2026 Full-Month AI Prediction:</strong> Day 25 of 31 elapsed (81%). Based on weekend surge velocity, an additional <strong className="font-bold">760 meals (~304 kg)</strong> are projected by Oct 31, 2026.
+                    </span>
+                  ) : (
+                    <span>
+                      <strong className="font-bold text-[#087B46]">Actual Month-To-Date (25 Oct 2026):</strong> 2,090 meals logged across Banjara Hills, Hitec City, Secunderabad, and Gandipet.
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Recent Activity Card */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4">
+          {/* Recent Activity Card (Rising Sequentially) */}
+          <div
+            className="bg-[#FFFFFF] rounded-3xl p-5 border border-[#DCE9DE] shadow-sm space-y-4 animate-box-rise"
+            style={{ animationDelay: '620ms' }}
+          >
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-slate-900 text-sm">Recent Activity</h3>
               <button

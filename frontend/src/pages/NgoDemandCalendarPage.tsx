@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, CheckCircle, Clock, HeartHandshake, Filter, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 
 interface NgoDemand {
   id: string;
@@ -92,19 +93,20 @@ export const NgoDemandCalendarPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-[#DCE9DE]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE] rounded-full">
               Operations Module • Feature 6
             </span>
-            <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#DCE9DE] text-[#163D2B] rounded-full">
               Community Pull Demand
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 mt-2">
-            {t('nav_ngo_demand', 'NGO & Shelter Demand Calendar')}
-          </h1>
+          <AnimatedPageHeading
+            text={t('nav_ngo_demand', 'NGO & Shelter Demand Calendar')}
+            className="text-2xl font-bold text-[#20352A] mt-2"
+          />
           <p className="text-slate-500 text-sm mt-1">
             Registered Hyderabad NGOs declare required meal counts in advance. System automatically matches incoming donor surplus to scheduled community meal slots.
           </p>
@@ -112,7 +114,7 @@ export const NgoDemandCalendarPage: React.FC = () => {
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#367A50] hover:bg-[#24543B] text-white rounded-2xl text-xs font-bold shadow-md shadow-[#163D2B]/20 transition"
         >
           <Plus className="w-4 h-4" />
           Post Demand Request
@@ -124,20 +126,21 @@ export const NgoDemandCalendarPage: React.FC = () => {
         {/* Demands List */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-slate-800 text-base">Scheduled Demand Windows ({demands.length})</h2>
+            <h2 className="font-bold text-[#20352A] text-base">Scheduled Demand Windows ({demands.length})</h2>
             <span className="text-xs text-slate-400">All registered Hyderabad centers</span>
           </div>
 
           <div className="space-y-3">
-            {demands.map((d) => {
+            {demands.map((d, idx) => {
               const remaining = d.servingsRequired - (d.fulfilledServings || 0);
               const isFulfilled = d.status === 'FULFILLED' || remaining <= 0;
               return (
                 <div
                   key={d.id}
-                  className={`bg-white p-5 rounded-xl border transition shadow-sm ${
-                    selectedDemand?.id === d.id ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-emerald-300'
+                  className={`bg-white p-5 rounded-2xl border transition shadow-sm animate-box-rise ${
+                    selectedDemand?.id === d.id ? 'border-[#367A50] ring-2 ring-[#DCE9DE]' : 'border-[#DCE9DE] hover:border-[#79A786]'
                   }`}
+                  style={{ animationDelay: `${260 + idx * 80}ms` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
@@ -189,8 +192,11 @@ export const NgoDemandCalendarPage: React.FC = () => {
         </div>
 
         {/* Compatibility Match Drawer */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
+        <div
+          className="bg-white p-6 rounded-3xl border border-[#DCE9DE] shadow-sm space-y-4 animate-box-rise"
+          style={{ animationDelay: '420ms' }}
+        >
+          <div className="flex items-center gap-2 text-[#20352A] font-bold text-base border-b border-[#DCE9DE] pb-3">
             <HeartHandshake className="w-5 h-5 text-emerald-600" />
             Surplus Compatibility
           </div>

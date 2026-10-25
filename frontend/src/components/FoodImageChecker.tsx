@@ -204,15 +204,15 @@ export const FoodImageChecker: React.FC<FoodImageCheckerProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-6">
+    <div className="bg-white rounded-3xl border border-[#DCE9DE] shadow-sm p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#DCE9DE]">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#087B46]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE] text-xs font-bold mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#367A50]" />
             AI Visual Inspection
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-[#20352A] tracking-tight">
             AI Food Image Checker
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">

@@ -105,21 +105,21 @@ public class LiveDemoSimulatorService {
 
         int createdListingsCount = 0;
 
-        // 1. CRITICAL Urgency Listing (42 mins left -> Flashing Red on Urgency Radar)
+        // ==================== 1. COOKED MEALS (4 distinct items) ====================
         FoodListing l1 = createListingHelper(
                 paradise,
-                "Special Dum Biryani & Mirchi Ka Salan",
+                "Hyderabadi Veg Dum Biryani & Mirchi Ka Salan",
                 "COOKED_MEALS",
                 55.0,
                 "MEALS",
                 now.minusMinutes(45),
                 now.minusMinutes(15),
-                now.plusMinutes(42), // 42 minutes remaining -> CRITICAL
+                now.plusMinutes(42),
                 "MG Road, Secunderabad, Hyderabad",
                 17.4411,
                 78.4983,
                 "FRESHLY_PREPARED",
-                false,
+                true,
                 "Contains Nuts (Cashews)",
                 "HEATED_CONTAINER",
                 "Service counter 2, ask for Rahim",
@@ -129,7 +129,6 @@ public class LiveDemoSimulatorService {
         );
         createdListingsCount++;
 
-        // 2. HIGH Urgency Listing (85 mins left -> Amber on Urgency Radar)
         FoodListing l2 = createListingHelper(
                 cyber,
                 "Banquet Special Paneer Butter Masala & Naan",
@@ -138,7 +137,7 @@ public class LiveDemoSimulatorService {
                 "MEALS",
                 now.minusMinutes(50),
                 now.minusMinutes(20),
-                now.plusMinutes(85), // 85 minutes remaining -> HIGH
+                now.plusMinutes(85),
                 "Hitec City, Madhapur, Hyderabad",
                 17.4483,
                 78.3742,
@@ -153,16 +152,15 @@ public class LiveDemoSimulatorService {
         );
         createdListingsCount++;
 
-        // 3. HIGH Urgency Listing (115 mins left -> Amber)
         FoodListing l3 = createListingHelper(
                 taj,
-                "Executive Buffet South Indian Thali Meals",
+                "Royal Buffet Steamed Rice & Dal Makhani",
                 "COOKED_MEALS",
                 50.0,
                 "MEALS",
                 now.minusMinutes(60),
                 now.minusMinutes(10),
-                now.plusMinutes(115), // 115 minutes remaining -> HIGH
+                now.plusMinutes(115),
                 "Road No. 1, Banjara Hills, Hyderabad",
                 17.4156,
                 78.4487,
@@ -177,7 +175,6 @@ public class LiveDemoSimulatorService {
         );
         createdListingsCount++;
 
-        // 4. MEDIUM Urgency Listing (180 mins left -> Teal)
         FoodListing l4 = createListingHelper(
                 cbit,
                 "Fresh Steamed Idli, Medu Vada & Sambar",
@@ -186,7 +183,7 @@ public class LiveDemoSimulatorService {
                 "MEALS",
                 now.minusMinutes(25),
                 now,
-                now.plusMinutes(180), // 3 hours -> MEDIUM
+                now.plusMinutes(180),
                 "Gandipet, Hyderabad",
                 17.3916,
                 78.3194,
@@ -201,32 +198,356 @@ public class LiveDemoSimulatorService {
         );
         createdListingsCount++;
 
-        // 5. LOW Urgency Listing (360 mins left -> Emerald)
         FoodListing l5 = createListingHelper(
+                taj,
+                "Tempered Curd Rice with Pomegranate & Mustard",
+                "COOKED_MEALS",
+                45.0,
+                "MEALS",
+                now.minusMinutes(40),
+                now,
+                now.plusMinutes(240),
+                "Road No. 1, Banjara Hills, Hyderabad",
+                17.4156,
+                78.4487,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Dairy (Curd, Milk)",
+                "REFRIGERATED",
+                "Kitchen pantry counter, ask for Chef Anirudh",
+                "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543211",
+                "Chilled South Indian curd rice tempered with curry leaves and mustard."
+        );
+        createdListingsCount++;
+
+        FoodListing l6 = createListingHelper(
+                cyber,
+                "Fragrant Veg Basmati Pulao with Mixed Raita",
+                "COOKED_MEALS",
+                60.0,
+                "MEALS",
+                now.minusMinutes(30),
+                now,
+                now.plusMinutes(300),
+                "Hitec City, Madhapur, Hyderabad",
+                17.4483,
+                78.3742,
+                "FRESHLY_PREPARED",
+                true,
+                "Vegetarian. Dairy in raita.",
+                "HEATED_CONTAINER",
+                "Banquet hall dispatch counter",
+                "https://images.unsplash.com/photo-1633383718081-22ac93e3db65?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543216",
+                "Aromatic mild spiced basmati pulao cooked with carrots, beans and peas."
+        );
+        createdListingsCount++;
+
+        FoodListing l7 = createListingHelper(
+                cbit,
+                "Hot Rava Upma with Coconut Chutney & Cashews",
+                "COOKED_MEALS",
+                40.0,
+                "MEALS",
+                now.minusMinutes(20),
+                now,
+                now.plusMinutes(180),
+                "Gandipet, Hyderabad",
+                17.3916,
+                78.3194,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Nuts (Cashews), Wheat (Semolina)",
+                "HEATED_CONTAINER",
+                "Canteen main counter",
+                "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543215",
+                "Traditional roasted semolina upma served with fresh coconut chutney."
+        );
+        createdListingsCount++;
+
+        // ==================== 2. BAKERY & BREAD (4 distinct items) ====================
+        FoodListing b1 = createListingHelper(
                 central,
-                "Fresh Farm Tomatoes & Crisp Bell Peppers",
-                "RAW_PRODUCE",
-                30.0,
-                "KG",
+                "Artisan Sourdough Loaves & Multigrain Breads",
+                "BAKERY_BREAD",
+                35.0,
+                "PACKETS",
+                now.minusHours(3),
+                now,
+                now.plusMinutes(240),
+                "Jubilee Hills, Hyderabad",
+                17.4312,
+                78.4073,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Gluten (Wheat, Rye)",
+                "ROOM_TEMP",
+                "Bakery delivery counter",
+                "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543210",
+                "Freshly baked today, parchment wrapped in food-safe bags."
+        );
+        createdListingsCount++;
+
+        FoodListing b2 = createListingHelper(
+                taj,
+                "Fresh Golden Dinner Rolls & Pav Buns",
+                "BAKERY_BREAD",
+                50.0,
+                "PACKETS",
                 now.minusHours(2),
                 now,
-                now.plusMinutes(360), // 6 hours -> LOW
+                now.plusMinutes(320),
+                "Banjara Hills, Hyderabad",
+                17.4156,
+                78.4487,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Wheat",
+                "ROOM_TEMP",
+                "Kitchen pastry counter",
+                "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543211",
+                "Soft dinner buns baked fresh, sealed in cartons."
+        );
+        createdListingsCount++;
+
+        FoodListing b3 = createListingHelper(
+                cyber,
+                "Assorted Breakfast Croissants & Danishes",
+                "BAKERY_BREAD",
+                30.0,
+                "PACKETS",
+                now.minusHours(4),
+                now,
+                now.plusMinutes(200),
+                "Hitec City, Madhapur, Hyderabad",
+                17.4483,
+                78.3742,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Dairy, Wheat",
+                "ROOM_TEMP",
+                "Convention bakery room",
+                "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543216",
+                "Butter laminated croissants packed in ventilated food trays."
+        );
+        createdListingsCount++;
+
+        FoodListing b4 = createListingHelper(
+                cbit,
+                "Whole Wheat Herb Focaccia & Soft Pita Breads",
+                "BAKERY_BREAD",
+                25.0,
+                "PACKETS",
+                now.minusHours(1),
+                now,
+                now.plusMinutes(380),
+                "Gandipet, Hyderabad",
+                17.3916,
+                78.3194,
+                "FRESHLY_PREPARED",
+                true,
+                "Contains Wheat, Herbs",
+                "ROOM_TEMP",
+                "Canteen loading station",
+                "https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543215",
+                "Rosemary olive oil focaccia sliced and sealed."
+        );
+        createdListingsCount++;
+
+        // ==================== 3. PACKAGED GROCERIES (4 distinct items) ====================
+        FoodListing p1 = createListingHelper(
+                central,
+                "Sealed Organic Basmati Rice Bags (5 kg)",
+                "PACKAGED_GROCERIES",
+                20.0,
+                "PACKETS",
+                now.minusDays(1),
+                now,
+                now.plusDays(3),
+                "Moosapet, Kukatpally, Hyderabad",
+                17.4728,
+                78.4184,
+                "SEALED_PACKAGED",
+                true,
+                "None. 100% Raw Basmati.",
+                "ROOM_TEMP",
+                "Wholesale dry warehouse aisle 4",
+                "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543210",
+                "Factory vacuum-sealed premium long grain basmati rice."
+        );
+        createdListingsCount++;
+
+        FoodListing p2 = createListingHelper(
+                taj,
+                "Packaged Toor Dal & Moong Pulses (1 kg)",
+                "PACKAGED_GROCERIES",
+                40.0,
+                "KG",
+                now.minusDays(2),
+                now,
+                now.plusDays(4),
+                "Road No. 1, Banjara Hills, Hyderabad",
+                17.4156,
+                78.4487,
+                "SEALED_PACKAGED",
+                true,
+                "None. Lentils/Pulses.",
+                "ROOM_TEMP",
+                "Hotel commissary store bay",
+                "https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543211",
+                "Unpolished high protein lentils in sealed moisture-proof bags."
+        );
+        createdListingsCount++;
+
+        FoodListing p3 = createListingHelper(
+                paradise,
+                "Cold-Pressed Cooking Oil & Whole Wheat Flour",
+                "PACKAGED_GROCERIES",
+                30.0,
+                "PACKETS",
+                now.minusDays(1),
+                now,
+                now.plusDays(5),
+                "MG Road, Secunderabad, Hyderabad",
+                17.4411,
+                78.4983,
+                "SEALED_PACKAGED",
+                true,
+                "Contains Wheat",
+                "ROOM_TEMP",
+                "Commissary delivery door",
+                "https://images.unsplash.com/photo-1471193945509-9ad0617afabf?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543214",
+                "Sealed 5L refined sunflower oil tins and 10kg flour bags."
+        );
+        createdListingsCount++;
+
+        FoodListing p4 = createListingHelper(
+                cyber,
+                "Fortified Rolled Oats & Multi-Grain Cereals",
+                "PACKAGED_GROCERIES",
+                25.0,
+                "PACKETS",
+                now.minusDays(1),
+                now,
+                now.plusDays(7),
+                "Hitec City, Madhapur, Hyderabad",
+                17.4483,
+                78.3742,
+                "SEALED_PACKAGED",
+                true,
+                "Contains Oats, Grains",
+                "ROOM_TEMP",
+                "Convention storage room",
+                "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543216",
+                "Nutritious boxed breakfast cereals with 6-month shelf life."
+        );
+        createdListingsCount++;
+
+        // ==================== 4. FRESH PRODUCE (4 distinct items) ====================
+        FoodListing r1 = createListingHelper(
+                central,
+                "Farm Fresh Tomatoes & Crisp Cucumbers",
+                "FRESH_PRODUCE",
+                35.0,
+                "KG",
+                now.minusHours(4),
+                now,
+                now.plusMinutes(420),
                 "Road No. 1, Banjara Hills, Hyderabad",
                 17.4156,
                 78.4487,
                 "EXCELLENT",
                 true,
-                "None. Fresh agricultural produce.",
+                "None. Fresh farm vegetables.",
                 "ROOM_TEMP",
                 "Central Surplus Hub bay 1",
-                "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80",
+                "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
                 "+91 9876543210",
-                "Farm crate sorted and quality graded Class A."
+                "Farm crate sorted, washed and quality graded Class A."
+        );
+        createdListingsCount++;
+
+        FoodListing r2 = createListingHelper(
+                taj,
+                "Organic Shimla Apples, Bananas & Oranges",
+                "FRESH_PRODUCE",
+                40.0,
+                "KG",
+                now.minusHours(5),
+                now,
+                now.plusMinutes(480),
+                "Banjara Hills Road No. 1, Hyderabad",
+                17.4156,
+                78.4487,
+                "EXCELLENT",
+                true,
+                "None. Fresh fruits.",
+                "ROOM_TEMP",
+                "Fresh produce receiving dock",
+                "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543211",
+                "Sweet seasonal fruit assortment in ventilated wooden crates."
+        );
+        createdListingsCount++;
+
+        FoodListing r3 = createListingHelper(
+                cbit,
+                "Crisp Green Spinach, Palak & Fresh Mint",
+                "FRESH_PRODUCE",
+                25.0,
+                "KG",
+                now.minusHours(2),
+                now,
+                now.plusMinutes(260),
+                "Gandipet, Hyderabad",
+                17.3916,
+                78.3194,
+                "EXCELLENT",
+                true,
+                "None. Fresh leafy greens.",
+                "ROOM_TEMP",
+                "Garden surplus collection desk",
+                "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543215",
+                "Organically grown leafy greens harvested earlier today."
+        );
+        createdListingsCount++;
+
+        FoodListing r4 = createListingHelper(
+                paradise,
+                "Sweet Golden Corn, Carrots & Tender Beans",
+                "FRESH_PRODUCE",
+                30.0,
+                "KG",
+                now.minusHours(3),
+                now,
+                now.plusMinutes(540),
+                "MG Road, Secunderabad, Hyderabad",
+                17.4411,
+                78.4983,
+                "EXCELLENT",
+                true,
+                "None. Fresh vegetables.",
+                "ROOM_TEMP",
+                "Kitchen prep dispatch",
+                "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&w=600&q=80",
+                "+91 9876543214",
+                "Handpicked sweet corn cobs and fresh beans in burlap sacks."
         );
         createdListingsCount++;
 
         // 6. Generate Smart Ranked Matches for active listings
-        for (FoodListing listing : List.of(l1, l2, l3, l4, l5)) {
+        for (FoodListing listing : List.of(l1, l2, l3, l4, b1, b2, p1, r1)) {
             try {
                 List<MatchingEngine.MatchCandidate> candidates = matchingEngine.findRankedMatches(listing, receivers);
                 UUID attemptId = UUID.randomUUID();
@@ -303,40 +624,71 @@ public class LiveDemoSimulatorService {
                                             boolean vegetarian, String allergen, String storage,
                                             String pickupInstructions, String photoUrl, String contactPhone,
                                             String safetyNotes) {
-        FoodListing listing = new FoodListing(
-                provider,
-                foodName,
-                category,
-                quantity,
-                unit,
-                prepTime,
-                availableFrom,
-                availableUntil,
-                address,
-                lat,
-                lon,
-                condition,
-                vegetarian,
-                allergen,
-                storage,
-                pickupInstructions,
-                photoUrl,
-                contactPhone
-        );
-        listing.setStatus(FoodStatus.AVAILABLE);
-        listing.recalculateUrgency();
-        listing = foodListingRepository.save(listing);
+        List<FoodListing> existingList = foodListingRepository.findAll().stream()
+                .filter(l -> l.getFoodName() != null && l.getFoodName().equalsIgnoreCase(foodName))
+                .toList();
 
-        FoodSafetyCheck check = new FoodSafetyCheck(
-                listing,
-                true,
-                true,
-                true,
-                true,
-                true,
-                safetyNotes
-        );
-        foodSafetyCheckRepository.save(check);
+        FoodListing listing;
+        if (!existingList.isEmpty()) {
+            listing = existingList.get(0);
+            listing.setProvider(provider);
+            listing.setFoodCategory(category);
+            listing.setQuantity(quantity);
+            listing.setRemainingQuantity(quantity);
+            listing.setReservedQuantity(0.0);
+            listing.setUnit(unit);
+            listing.setPreparationTime(prepTime);
+            listing.setAvailableFrom(availableFrom);
+            listing.setAvailableUntil(availableUntil);
+            listing.setAddress(address);
+            listing.setLatitude(lat);
+            listing.setLongitude(lon);
+            listing.setFoodCondition(condition);
+            listing.setVegetarian(vegetarian);
+            listing.setAllergenInfo(allergen);
+            listing.setStorageCondition(storage);
+            listing.setPickupInstructions(pickupInstructions);
+            listing.setPhotoUrl(photoUrl);
+            listing.setContactPhone(contactPhone);
+            listing.setStatus(FoodStatus.AVAILABLE);
+            listing.recalculateUrgency();
+            listing = foodListingRepository.save(listing);
+        } else {
+            listing = new FoodListing(
+                    provider,
+                    foodName,
+                    category,
+                    quantity,
+                    unit,
+                    prepTime,
+                    availableFrom,
+                    availableUntil,
+                    address,
+                    lat,
+                    lon,
+                    condition,
+                    vegetarian,
+                    allergen,
+                    storage,
+                    pickupInstructions,
+                    photoUrl,
+                    contactPhone
+            );
+            listing.setStatus(FoodStatus.AVAILABLE);
+            listing.recalculateUrgency();
+            listing = foodListingRepository.save(listing);
+
+            FoodSafetyCheck check = new FoodSafetyCheck(
+                    listing,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    safetyNotes
+            );
+            foodSafetyCheckRepository.save(check);
+        }
 
         return listing;
     }

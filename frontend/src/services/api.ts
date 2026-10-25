@@ -8,6 +8,10 @@ import {
   PickupAssignment,
   PrototypeValidationReport,
   User,
+  FoodPreparationRecord,
+  FoodPreparationEntryPayload,
+  SmartPreparationPrediction,
+  PreparationAdvisorSummary,
 } from '../types';
 
 const API_BASE = '/api';
@@ -349,5 +353,82 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ message, history }),
     }),
+
+  // Smart Surplus Prediction & Preparation Advisor
+  createPreparationRecord: (payload: FoodPreparationEntryPayload) =>
+    request<FoodPreparationRecord>('/prediction/preparation-records', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  updatePreparationRecord: (id: string, payload: FoodPreparationEntryPayload) =>
+    request<FoodPreparationRecord>(`/prediction/preparation-records/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  getPreparationRecords: (filters?: {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    mealPeriod?: string;
+    providerId?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.mealPeriod) params.append('mealPeriod', filters.mealPeriod);
+    if (filters?.providerId) params.append('providerId', filters.providerId);
+    const qs = params.toString();
+    return request<FoodPreparationRecord[]>(`/prediction/preparation-records${qs ? '?' + qs : ''}`);
+  },
+
+  getSmartDemandPrediction: (params: {
+    foodItem?: string;
+    mealPeriod?: string;
+    targetDate?: string;
+    safetyMarginPct?: number;
+    providerId?: string;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params.foodItem) qs.append('foodItem', params.foodItem);
+    if (params.mealPeriod) qs.append('mealPeriod', params.mealPeriod);
+    if (params.targetDate) qs.append('targetDate', params.targetDate);
+    if (params.safetyMarginPct !== undefined) qs.append('safetyMarginPct', params.safetyMarginPct.toString());
+    if (params.providerId) qs.append('providerId', params.providerId);
+    return request<SmartPreparationPrediction>(`/prediction/advisor/forecast?${qs.toString()}`);
+  },
+
+  getPreparationAdvisorDashboard: (filters?: {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    mealPeriod?: string;
+    providerId?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.mealPeriod) params.append('mealPeriod', filters.mealPeriod);
+    if (filters?.providerId) params.append('providerId', filters.providerId);
+    const qs = params.toString();
+    return request<PreparationAdvisorSummary>(`/prediction/advisor/dashboard${qs ? '?' + qs : ''}`);
+  },
+
+  getDonationHandoff: (recordId: string) =>
+    request<any>(`/prediction/preparation-records/${recordId}/donate-handoff`, {
+      method: 'POST',
+    }),
+
+  markRecordDonated: (recordId: string, quantity: number, listingId?: string) => {
+    const qs = new URLSearchParams();
+    qs.append('quantity', quantity.toString());
+    if (listingId) qs.append('listingId', listingId);
+    return request<FoodPreparationRecord>(`/prediction/preparation-records/${recordId}/mark-donated?${qs.toString()}`, {
+      method: 'POST',
+    });
+  },
 };
 

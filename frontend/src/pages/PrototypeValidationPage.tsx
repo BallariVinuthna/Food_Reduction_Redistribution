@@ -155,9 +155,9 @@ export const PrototypeValidationPage: React.FC = () => {
       <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-indigo-950 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-semibold text-lime-300 uppercase tracking-wider">
-            Module 5 • Empirical Validation & Benchmarking
+            Empirical Validation & Benchmarking
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Prototype Validation Simulator</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Validation Simulator</h1>
           <p className="text-xs text-emerald-200 mt-1 max-w-2xl">
             Empirical testing of 20 realistic Hyderabad surplus scenarios across 10 receiver hubs. All simulation runs are preserved with unique run IDs.
           </p>
@@ -338,7 +338,7 @@ export const PrototypeValidationPage: React.FC = () => {
         )}
       </div>
 
-      {/* MODULE 1 BEFORE vs. MODULE 5 AFTER Impact Comparison */}
+      {/* BASELINE (BEFORE) vs. PROTOTYPE (AFTER) Impact Comparison */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>

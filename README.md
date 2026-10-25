@@ -163,11 +163,42 @@ docker compose up --build
 
 ---
 
-## 8. Final Demonstration Scenario (Viva Evaluation Walkthrough)
-1. **Login as Food Provider:** Select `provider@demo.local` via the 1-click switcher.
-2. **Register Surplus Food:** Open wizard $\to$ Enter 50 meals $\to$ Set 90 min timer $\to$ Verify Food Safety Checklist $\to$ Click "Publish".
-3. **MCDA Engine Execution:** Backend evaluates Haversine proximity and scores Robin Hood Army as the #1 match (94%).
-4. **Login as NGO Receiver:** Switch to `receiver@demo.local` $\to$ View incoming surplus alert $\to$ Click "Accept & Dispatch".
-5. **Volunteer Pickup Transit:** Switch to `volunteer@demo.local` $\to$ Progress status: `Mark En Route` $\to$ `Mark Arrived` $\to$ `Confirm Food Collected` $\to$ `Confirm Safely Delivered`.
-6. **Live Analytics Recalculation:** Switch to `admin@demo.local` $\to$ Observe real-time increments in meals redistributed, food waste avoided (kg), and economic value saved (₹).
-7. **Module 5 Validation:** Review Target vs. Actual table and before/after comparison.
+---
+
+## 9. Smart Surplus Prediction & Preparation Advisor (Feature 2)
+
+### Overview & Source Prevention Objective
+Food waste prevention must occur **before** food becomes surplus. The **Smart Surplus Prediction & Preparation Advisor** helps restaurants, hotels, hostels, and college canteens estimate expected consumption and calibrate preparation quantities:
+- **Prevention at Source:** Prevents buffer surplus from being cooked unnecessarily.
+- **Redistribution Integration:** If edible surplus still occurs despite prevention, one-click handoff allows the provider to review remaining leftovers and publish a donation listing with verified food safety compliance.
+
+### Core Modules
+1. **Food Preparation Tracker (Data Entry):**
+   - Records: Food item, category, date, meal period, quantity prepared, served/sold, donated, discarded, customers served, and notes.
+   - Enforces conservation of quantity: $\text{Served} + \text{Donated} + \text{Discarded} \le \text{Prepared}$.
+   - Automatically computes unallocated remaining leftovers: $\text{Remaining} = \text{Prepared} - (\text{Served} + \text{Donated} + \text{Discarded})$.
+   - Prevents negative inputs and duplicate accidental submissions on the same date/meal.
+2. **Transparent Statistical Demand Prediction:**
+   - Evaluates historical records by food item, meal period, and day of week.
+   - Blends matching day-of-week demand ($65\%$) with general moving average ($35\%$) when $\ge 2$ matching days exist.
+   - Computes standard deviation and confidence intervals ($\pm 1.28 \sigma$).
+   - Recommends preparation using a configurable safety buffer ($0\%$ to $25\%$, default $10\%$).
+   - Honestly reports data insufficiency when $<3$ observations exist.
+3. **Preparation Advisor Dashboard:**
+   - Live KPI cards: Total Prepared, Served, Donated, Discarded, Unallocated Remaining, Avoidable Waste Prevented.
+   - Visual trend charts (Area & Bar charts using Recharts).
+   - Recurring Leftover Items table with specific batch trimming advice.
+   - Model Evaluation Panel (Section 10): Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE), and Forecast Accuracy %.
+4. **Surplus Redistribution Handoff:**
+   - Records with remaining edible food feature a **"Donate Remaining"** action.
+   - Seamlessly pre-fills `CreateListingWizard` with food name, quantity, unit, storage condition, and safety notes.
+   - Automatically marks the source preparation record as donated upon successful listing publication.
+
+### Key API Endpoints
+- `POST /api/prediction/preparation-records`: Log a meal preparation and consumption record with validation.
+- `PUT /api/prediction/preparation-records/{id}`: Update an existing preparation record.
+- `GET /api/prediction/preparation-records`: Filter historical preparation logs.
+- `GET /api/prediction/advisor/forecast`: Smart demand prediction and recommended prep quantity.
+- `GET /api/prediction/advisor/dashboard`: Comprehensive dashboard summary, recurring leftovers, and MAE evaluation metrics.
+- `POST /api/prediction/preparation-records/{id}/donate-handoff`: Retrieve prefilled donation data for remaining leftovers.
+- `POST /api/prediction/preparation-records/{id}/mark-donated`: Link donation listing and update donated quantities.

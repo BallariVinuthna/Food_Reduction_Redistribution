@@ -25,6 +25,9 @@ import { VerifiedImpactLedgerPage } from './pages/VerifiedImpactLedgerPage';
 import { RescuePriorityPage } from './pages/RescuePriorityPage';
 import { PseExperimentLabPage } from './pages/PseExperimentLabPage';
 import { FoodImageChecker } from './components/FoodImageChecker';
+import { LandingPage } from './pages/LandingPage';
+import { PageWallpaper } from './components/PageWallpaper';
+import { PageHero } from './components/PageHero';
 import { api } from './services/api';
 import { AppNotification } from './types';
 
@@ -36,6 +39,7 @@ const AppContent: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState<boolean>(false);
+  const [donationPrefill, setDonationPrefill] = useState<any>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -75,7 +79,10 @@ const AppContent: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="min-h-screen flex bg-[#F6F8F7] text-[#172033] font-sans antialiased selection:bg-[#8BE34B]/40 selection:text-[#032C20]">
+    <div className="min-h-screen flex bg-[#021A12] text-[#172033] font-sans antialiased selection:bg-[#8BE34B]/40 selection:text-[#032C20] relative">
+      {/* High-Quality Sustainable Food Wallpaper System */}
+      <PageWallpaper theme={activeTab} />
+
       {/* 1. Persistent Deep Forest Green Left Sidebar with 4 Master Sections */}
       <Sidebar
         activeTab={activeTab}
@@ -86,7 +93,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* 2. Main Workspace Layout */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         {/* Top Navigation Bar with Urgency Radar and Multilingual EN/TE/HI switch */}
         <TopNavbar
           onSearch={(q) => setGlobalSearch(q)}
@@ -98,8 +105,18 @@ const AppContent: React.FC = () => {
           onNavigate={setActiveTab}
         />
 
-        {/* Workspace Content Router */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        {/* Workspace Content Router with smooth animated transitions */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto relative z-10 animate-fade-in-up">
+          {/* Reusable PageHero Top Section (Displayed on feature pages where hero is appropriate) */}
+          {activeTab !== 'landing' && activeTab !== 'dashboard' && activeTab !== 'surplus-prediction' && activeTab !== 'login' && activeTab !== 'register' && (
+            <PageHero activeTab={activeTab} onNavigate={setActiveTab} />
+          )}
+
+          {/* Landing Presentation Page */}
+          {activeTab === 'landing' && (
+            <LandingPage onNavigate={setActiveTab} />
+          )}
+
           {/* Operations: Main Operations Dashboard */}
           {activeTab === 'dashboard' && (
             <OperationsDashboard
@@ -117,8 +134,15 @@ const AppContent: React.FC = () => {
           {/* Operations: Create Donation Wizard */}
           {activeTab === 'create-donation' && (
             <CreateListingWizard
-              onSuccess={() => setActiveTab('my-donations')}
-              onCancel={() => setActiveTab('dashboard')}
+              initialValues={donationPrefill}
+              onSuccess={() => {
+                setDonationPrefill(null);
+                setActiveTab('my-donations');
+              }}
+              onCancel={() => {
+                setDonationPrefill(null);
+                setActiveTab('dashboard');
+              }}
             />
           )}
 
@@ -136,12 +160,19 @@ const AppContent: React.FC = () => {
           {/* Operations: Food Waste Diary (Feature 10) */}
           {activeTab === 'waste-diary' && <FoodWasteDiaryPage />}
 
-          {/* Intelligence: Surplus Prediction (Feature 2) */}
-          {activeTab === 'surplus-prediction' && <SurplusPredictionPage />}
+          {/* Intelligence: Smart Surplus Prediction & Preparation Advisor */}
+          {activeTab === 'surplus-prediction' && (
+            <SurplusPredictionPage
+              onNavigateToDonation={(prefill) => {
+                setDonationPrefill(prefill);
+                setActiveTab('create-donation');
+              }}
+            />
+          )}
 
           {/* Intelligence: AI Food Image Checker (Feature 1) */}
           {activeTab === 'image-checker' && (
-            <div className="max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div className="max-w-3xl mx-auto bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200">
               <h2 className="text-xl font-bold text-slate-800 mb-2">AI Food Image Inspection & Safety Checker</h2>
               <p className="text-xs text-slate-500 mb-6">
                 Direct visual pre-screening for color consistency, packaging condition, and estimated category.
@@ -190,7 +221,7 @@ const AppContent: React.FC = () => {
           {/* Dedicated Full Map View */}
           {activeTab === 'map' && <FullMapPage onNavigate={setActiveTab} />}
 
-          {/* Preserved Module 5 Validation Suite */}
+          {/* Preserved Validation Suite */}
           {activeTab === 'validation' && <PrototypeValidationPage />}
 
           {/* Authentication Screen */}

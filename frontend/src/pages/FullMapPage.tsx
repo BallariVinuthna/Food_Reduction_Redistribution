@@ -3,6 +3,7 @@ import { FoodListing } from '../types';
 import { api } from '../services/api';
 import { SurplusMap } from '../components/SurplusMap';
 import { ClaimFoodModal } from '../components/ClaimFoodModal';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 import {
   MapPin,
   Filter,
@@ -40,20 +41,21 @@ export const FullMapPage: React.FC<FullMapPageProps> = ({ onNavigate }) => {
   }, []);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm flex items-center justify-between">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#DCE9DE] shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+            className="p-2 rounded-xl bg-[#F2F7F1] hover:bg-[#DCE9DE] text-[#24543B] border border-[#DCE9DE] transition"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-              Live Food Redistribution Map • Hyderabad
-            </h1>
+            <AnimatedPageHeading
+              text="Live Food Redistribution Map • Hyderabad"
+              className="text-xl sm:text-2xl font-extrabold text-[#20352A]"
+            />
             <p className="text-xs text-slate-500">
               Spatial tracking of food donations, recipient hubs, and transport volunteers.
             </p>

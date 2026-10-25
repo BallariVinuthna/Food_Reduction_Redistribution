@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Download, Award, CheckCircle2, TrendingUp, FileText, Info } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 
 interface LedgerEntry {
   transactionId: string;
@@ -63,19 +64,20 @@ export const VerifiedImpactLedgerPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-[#DCE9DE]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE] rounded-full">
               Administration Module • Feature 12
             </span>
-            <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#DCE9DE] text-[#163D2B] rounded-full">
               UNEP Counterfactual Audit Ledger
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 mt-2">
-            {t('nav_impact_ledger', 'Verified Impact & ESG Audit Ledger')}
-          </h1>
+          <AnimatedPageHeading
+            text={t('nav_impact_ledger', 'Verified Impact & ESG Audit Ledger')}
+            className="text-2xl font-bold text-[#20352A] mt-2"
+          />
           <p className="text-slate-500 text-sm mt-1">
             Immutable physical handover records with dual OTP verification. Counterfactual baseline prevents carbon credit inflation or double counting.
           </p>
@@ -83,7 +85,7 @@ export const VerifiedImpactLedgerPage: React.FC = () => {
 
         <button
           onClick={handleExportCsv}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#367A50] hover:bg-[#24543B] text-white rounded-2xl text-xs font-bold shadow-md shadow-[#163D2B]/20 transition"
         >
           <Download className="w-4 h-4" />
           Download ESG Audit CSV
@@ -93,33 +95,45 @@ export const VerifiedImpactLedgerPage: React.FC = () => {
       {/* KPI Cards */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Verified Meals Delivered</div>
-            <div className="text-3xl font-extrabold text-emerald-700 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '260ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">Verified Meals Delivered</div>
+            <div className="text-3xl font-extrabold text-[#163D2B] mt-2">
               {summary.totalMealsDelivered} <span className="text-sm font-normal text-slate-500">meals</span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">OTP cryptographic sign-off</p>
+            <p className="text-xs text-[#367A50] mt-1 font-medium">OTP cryptographic sign-off</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Edible Waste Prevented</div>
-            <div className="text-3xl font-extrabold text-blue-700 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '340ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">Edible Waste Prevented</div>
+            <div className="text-3xl font-extrabold text-[#24543B] mt-2">
               {summary.foodWasteAvoidedKg} <span className="text-sm font-normal text-slate-500">kg</span>
             </div>
             <p className="text-xs text-slate-400 mt-1">0.40 kg baseline standard per meal</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">CO2e Emissions Reduced</div>
-            <div className="text-3xl font-extrabold text-purple-700 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '420ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">CO2e Emissions Reduced</div>
+            <div className="text-3xl font-extrabold text-[#367A50] mt-2">
               {summary.co2eEmissionsAvoidedKg} <span className="text-sm font-normal text-slate-500">kg CO2e</span>
             </div>
             <p className="text-xs text-slate-400 mt-1">2.5 kg CO2e / kg food waste avoided</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Economic Value Salvaged</div>
-            <div className="text-3xl font-extrabold text-amber-700 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '500ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">Economic Value Salvaged</div>
+            <div className="text-3xl font-extrabold text-[#163D2B] mt-2">
               ₹{summary.economicValueSavedInr?.toLocaleString()}
             </div>
             <p className="text-xs text-slate-400 mt-1">₹60 standard meal value</p>
@@ -129,17 +143,23 @@ export const VerifiedImpactLedgerPage: React.FC = () => {
 
       {/* Methodology Notice */}
       {summary && (
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
-          <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="text-xs text-slate-600 space-y-1">
-            <div className="font-bold text-slate-800">Counterfactual Verification Standard</div>
+        <div
+          className="p-5 bg-[#F2F7F1] border border-[#DCE9DE] rounded-2xl flex items-start gap-3 animate-box-rise"
+          style={{ animationDelay: '540ms' }}
+        >
+          <Info className="w-5 h-5 text-[#367A50] shrink-0 mt-0.5" />
+          <div className="text-xs text-[#20352A] space-y-1">
+            <div className="font-bold text-[#163D2B]">Counterfactual Verification Standard</div>
             <p>{summary.counterfactualMethodology}</p>
           </div>
         </div>
       )}
 
       {/* Audit Log Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div
+        className="bg-white rounded-3xl border border-[#DCE9DE] shadow-sm overflow-hidden animate-box-rise"
+        style={{ animationDelay: '580ms' }}
+      >
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />

@@ -108,6 +108,33 @@ public class AiAssistanceController {
     }
 
     /**
+     * AI Food Safety & Redistribution Window Advisor:
+     * Analyzes perishable food item safety window based on storage condition and elapsed time.
+     */
+    @PostMapping("/analyze-food")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> analyzeFoodSafety(@RequestBody Map<String, Object> payload) {
+        String foodName = payload.containsKey("foodName") && payload.get("foodName") != null
+                ? payload.get("foodName").toString()
+                : "Perishable Cooked Meal";
+        String category = payload.containsKey("category") && payload.get("category") != null
+                ? payload.get("category").toString()
+                : "COOKED_MEALS";
+        String storageCondition = payload.containsKey("storageCondition") && payload.get("storageCondition") != null
+                ? payload.get("storageCondition").toString()
+                : "HOT_HOLDING";
+        int elapsedMinutes = 60;
+        if (payload.containsKey("elapsedMinutes") && payload.get("elapsedMinutes") != null) {
+            try {
+                elapsedMinutes = Integer.parseInt(payload.get("elapsedMinutes").toString());
+            } catch (Exception ignored) {
+            }
+        }
+
+        Map<String, Object> assessment = openAiService.analyzeFoodSafetyAndShelfLife(foodName, category, storageCondition, elapsedMinutes);
+        return ResponseEntity.ok(ApiResponse.ok(assessment));
+    }
+
+    /**
      * AI Chatbot Assistant for answering doubts about food safety, donation workflows, and operations.
      */
     @PostMapping("/chat")

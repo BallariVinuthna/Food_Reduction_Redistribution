@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 import {
   User,
   Settings,
@@ -39,19 +40,19 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE9DE] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <img
             src="/assets/admin_avatar.jpg"
             alt="Profile Avatar"
-            className="w-16 h-16 rounded-2xl object-cover ring-4 ring-emerald-500/20 shadow-md"
+            className="w-16 h-16 rounded-2xl object-cover ring-4 ring-[#367A50]/20 shadow-md"
           />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold text-slate-900">{fullName}</h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F7EE] text-[#087B46]">
+              <AnimatedPageHeading text={fullName} className="text-2xl font-extrabold text-[#20352A]" />
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE]">
                 {user?.role || 'ADMINISTRATOR'}
               </span>
             </div>
@@ -74,20 +75,20 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
       </div>
 
       {savedNotice && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 font-bold animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-[#F2F7F1] border border-[#79A786] text-[#163D2B] text-xs flex items-center gap-2 font-bold animate-box-rise">
+          <CheckCircle2 className="w-5 h-5 text-[#367A50] shrink-0" />
           <span>Preferences updated successfully!</span>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 animate-box-rise" style={{ animationDelay: '200ms' }}>
         <button
           onClick={() => setActiveTab('profile')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
             activeTab === 'profile'
-              ? 'bg-[#087B46] text-white shadow-xs'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+              ? 'bg-[#367A50] text-white shadow-xs'
+              : 'bg-white text-[#20352A] hover:bg-[#F2F7F1] border border-[#DCE9DE]'
           }`}
         >
           <User className="w-4 h-4" />
@@ -98,8 +99,8 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
           onClick={() => setActiveTab('settings')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
             activeTab === 'settings'
-              ? 'bg-[#087B46] text-white shadow-xs'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+              ? 'bg-[#367A50] text-white shadow-xs'
+              : 'bg-white text-[#20352A] hover:bg-[#F2F7F1] border border-[#DCE9DE]'
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -109,7 +110,10 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
 
       {/* Profile Form */}
       {activeTab === 'profile' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm max-w-2xl">
+        <div
+          className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE9DE] shadow-sm max-w-2xl animate-box-rise"
+          style={{ animationDelay: '280ms' }}
+        >
           <form onSubmit={handleSave} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>

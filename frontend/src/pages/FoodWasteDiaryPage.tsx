@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Download, Plus, Trash2, PieChart, AlertCircle, FileText } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 
 interface WasteSummary {
   totalWasteRecordedKg: number;
@@ -90,19 +91,20 @@ export const FoodWasteDiaryPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-[#DCE9DE]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE] rounded-full">
               Operations Module • Feature 10
             </span>
-            <span className="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
+            <span className="px-2.5 py-1 text-xs font-semibold bg-[#DCE9DE] text-[#163D2B] rounded-full">
               Mass-Balance Quantity Accounting
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 mt-2">
-            {t('nav_waste_diary', 'Donor Food Waste Diary')}
-          </h1>
+          <AnimatedPageHeading
+            text={t('nav_waste_diary', 'Donor Food Waste Diary')}
+            className="text-2xl font-bold text-[#20352A] mt-2"
+          />
           <p className="text-slate-500 text-sm mt-1">
             Track daily kitchen discards, root cause reasons (Over-prep, Cold-chain breakdown, Buffet leftover), and download audit-ready CSV reports.
           </p>
@@ -111,14 +113,14 @@ export const FoodWasteDiaryPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition"
+            className="flex items-center gap-2 px-4 py-2 bg-[#F2F7F1] hover:bg-[#DCE9DE] text-[#24543B] rounded-2xl text-xs font-bold border border-[#DCE9DE] transition"
           >
             <Download className="w-4 h-4" />
             Export CSV
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#367A50] hover:bg-[#24543B] text-white rounded-2xl text-xs font-bold shadow-md shadow-[#163D2B]/20 transition"
           >
             <Plus className="w-4 h-4" />
             Record Discard
@@ -129,37 +131,49 @@ export const FoodWasteDiaryPage: React.FC = () => {
       {/* KPI Stats */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Total Food Lost (Month-to-Date)</div>
-            <div className="text-3xl font-extrabold text-rose-600 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '260ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">Total Food Lost (Month-to-Date)</div>
+            <div className="text-3xl font-extrabold text-rose-700 mt-2">
               {summary.totalWasteRecordedKg} <span className="text-sm font-normal text-slate-500">kg</span>
             </div>
             <p className="text-xs text-slate-400 mt-1">{summary.entryCount} recorded incidents</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Estimated Financial Value Lost</div>
-            <div className="text-3xl font-extrabold text-amber-700 mt-2">
+          <div
+            className="bg-white p-5 rounded-2xl border border-[#DCE9DE] shadow-sm animate-box-rise"
+            style={{ animationDelay: '340ms' }}
+          >
+            <div className="text-xs text-[#79A786] font-semibold uppercase tracking-wider">Estimated Financial Value Lost</div>
+            <div className="text-3xl font-extrabold text-amber-800 mt-2">
               ₹{summary.totalEconomicLossInr?.toLocaleString()}
             </div>
             <p className="text-xs text-slate-400 mt-1">Based on commercial prep cost</p>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-xs text-slate-500 font-medium">Primary Loss Cause</div>
-            <div className="text-2xl font-extrabold text-slate-800 mt-2">
+          <div
+            className="bg-[#F2F7F1] p-5 rounded-2xl border border-[#79A786]/60 shadow-sm animate-box-rise"
+            style={{ animationDelay: '420ms' }}
+          >
+            <div className="text-xs text-[#24543B] font-semibold uppercase tracking-wider">Primary Loss Cause</div>
+            <div className="text-2xl font-extrabold text-[#163D2B] mt-2">
               Over-Preparation (45%)
             </div>
-            <p className="text-xs text-emerald-600 mt-1">Addressable with Surplus Prediction</p>
+            <p className="text-xs text-[#367A50] mt-1 font-medium">Addressable with Surplus Prediction</p>
           </div>
         </div>
       )}
 
       {/* Diary Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-emerald-600" />
+      <div
+        className="bg-white rounded-3xl border border-[#DCE9DE] shadow-sm overflow-hidden animate-box-rise"
+        style={{ animationDelay: '500ms' }}
+      >
+        <div className="p-4 border-b border-[#DCE9DE] flex items-center justify-between">
+          <h2 className="font-bold text-[#20352A] text-sm flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#367A50]" />
             Kitchen Discard Log Entries
           </h2>
           <span className="text-xs text-slate-400">{entries.length} Entries Logged</span>

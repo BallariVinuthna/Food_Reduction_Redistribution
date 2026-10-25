@@ -377,70 +377,111 @@ public class OpenAiService {
     public Map<String, Object> analyzeFoodSafetyAndShelfLife(String foodName, String category, String storageCondition, int elapsedMinutes) {
         Map<String, Object> result = new HashMap<>();
 
-        if (openAiApiKey == null || openAiApiKey.isBlank()) {
-            result.put("source", "HEURISTIC_RULE_FALLBACK");
-            result.put("recommendedSafeMinutesRemaining", Math.max(30, 240 - elapsedMinutes));
-            result.put("foodSafetyRiskLevel", elapsedMinutes > 180 ? "HIGH" : "LOW");
-            result.put("storageAdvice", "Maintain below 5°C or above 60°C to prevent bacterial growth.");
-            return result;
-        }
+        if (openAiApiKey != null && !openAiApiKey.isBlank()) {
+            try {
+                String prompt = String.format(
+                        "You are a food safety microbiologist and logistics AI for SurplusFlow. Analyze the safety and redistribution window for: "
+                        + "Food Name: '%s', Category: '%s', Storage Condition: '%s', Prepared: %d minutes ago. "
+                        + "Return a JSON object with: "
+                        + "\"safeMinutesRemaining\" (integer number of safe remaining minutes), "
+                        + "\"riskLevel\" (one of: LOW, MEDIUM, HIGH, CRITICAL), "
+                        + "\"temperatureCritical\" (boolean), "
+                        + "\"handlingAdvice\" (concise actionable handling and storage advice).",
+                        foodName, category, storageCondition, elapsedMinutes
+                );
 
-        try {
-            String prompt = String.format(
-                    "You are a food safety microbiologist and logistics AI. Analyze the safety and redistribution window for: "
-                    + "Food Name: '%s', Category: '%s', Storage Condition: '%s', Prepared: %d minutes ago. "
-                    + "Return a JSON object with: "
-                    + "\"safeMinutesRemaining\" (number), "
-                    + "\"riskLevel\" (LOW/MEDIUM/HIGH/CRITICAL), "
-                    + "\"temperatureCritical\" (boolean), "
-                    + "\"handlingAdvice\" (short string).",
-                    foodName, category, storageCondition, elapsedMinutes
-            );
+                Map<String, Object> requestBody = Map.of(
+                        "model", "gpt-4o-mini",
+                        "messages", List.of(
+                                Map.of("role", "system", "content", "You are a professional food safety audit assistant. Return strictly valid JSON."),
+                                Map.of("role", "user", "content", prompt)
+                        ),
+                        "response_format", Map.of("type", "json_object"),
+                        "max_tokens", 250
+                );
 
-            Map<String, Object> requestBody = Map.of(
-                    "model", "gpt-4o-mini",
-                    "messages", List.of(
-                            Map.of("role", "system", "content", "You are a professional food safety audit assistant. Return strictly valid JSON."),
-                            Map.of("role", "user", "content", prompt)
-                    ),
-                    "response_format", Map.of("type", "json_object"),
-                    "max_tokens", 250
-            );
+                String bodyJson = objectMapper.writeValueAsString(requestBody);
 
-            String bodyJson = objectMapper.writeValueAsString(requestBody);
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+                        .header("Authorization", "Bearer " + openAiApiKey)
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(bodyJson))
+                        .build();
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.openai.com/v1/chat/completions"))
-                    .header("Authorization", "Bearer " + openAiApiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(bodyJson))
-                    .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    JsonNode root = objectMapper.readTree(response.body());
+                    String content = root.path("choices").get(0).path("message").path("content").asText();
+                    JsonNode parsed = objectMapper.readTree(content);
 
-            if (response.statusCode() == 200) {
-                JsonNode root = objectMapper.readTree(response.body());
-                String content = root.path("choices").get(0).path("message").path("content").asText();
-                JsonNode parsed = objectMapper.readTree(content);
+                    int safeMins = parsed.path("safeMinutesRemaining").asInt(Math.max(15, 240 - elapsedMinutes));
+                    String risk = parsed.path("riskLevel").asText("LOW").toUpperCase();
+                    String advice = parsed.path("handlingAdvice").asText("Keep hot food above 60°C or cold food below 5°C.");
+                    boolean tempCritical = parsed.path("temperatureCritical").asBoolean(true);
 
-                result.put("source", "OPENAI_GPT4O_MINI");
-                result.put("safeMinutesRemaining", parsed.path("safeMinutesRemaining").asInt(120));
-                result.put("riskLevel", parsed.path("riskLevel").asText("LOW"));
-                result.put("temperatureCritical", parsed.path("temperatureCritical").asBoolean(true));
-                result.put("handlingAdvice", parsed.path("handlingAdvice").asText("Keep hot food >60C and cold food <5C"));
-                return result;
-            } else {
-                logger.warn("OpenAI API call failed with status {}: {}", response.statusCode(), response.body());
+                    result.put("source", "OPENAI_GPT4O_MINI");
+                    result.put("safeMinutesRemaining", safeMins);
+                    result.put("recommendedSafeMinutesRemaining", safeMins);
+                    result.put("riskLevel", risk);
+                    result.put("foodSafetyRiskLevel", risk);
+                    result.put("temperatureCritical", tempCritical);
+                    result.put("handlingAdvice", advice);
+                    result.put("storageAdvice", advice);
+                    return result;
+                } else {
+                    logger.warn("OpenAI API call failed with status {}: {}", response.statusCode(), response.body());
+                }
+            } catch (Exception e) {
+                logger.error("Error invoking OpenAI API: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            logger.error("Error invoking OpenAI API: {}", e.getMessage());
         }
 
-        // Fallback calculation
+        // Domain-Aware Heuristic Fallback
+        int maxSafeWindow = 240; // Default 4 hours for standard cooked food
+        String advice;
+        boolean tempCritical = true;
+
+        String storage = storageCondition != null ? storageCondition.toUpperCase() : "ROOM_TEMP";
+        if (storage.contains("HOT") || storage.contains("60")) {
+            maxSafeWindow = 300; // 5 hours under continuous hot holding >60°C
+            advice = "Held under compliant hot holding (>60°C). Maintain thermal insulation in sealed containers until distribution.";
+            tempCritical = true;
+        } else if (storage.contains("REFRIG") || storage.contains("COLD")) {
+            maxSafeWindow = 480; // 8 hours if actively refrigerated <5°C
+            advice = "Chilled storage (<5°C) safely retards bacterial growth. Transport in cold insulated cooler boxes.";
+            tempCritical = true;
+        } else if (storage.contains("FROZEN")) {
+            maxSafeWindow = 720;
+            advice = "Deep frozen storage (< -18°C). Maintain unbroken cold chain until preparation/handover.";
+            tempCritical = false;
+        } else {
+            maxSafeWindow = 180; // 3 hours ambient room temp (Hyderabad climate)
+            advice = "Ambient room temperature accelerates microbiological danger zone (5°C - 60°C). Expedite distribution immediately.";
+            tempCritical = true;
+        }
+
+        int remaining = Math.max(15, maxSafeWindow - elapsedMinutes);
+        String riskLevel;
+        if (remaining <= 30 || elapsedMinutes >= maxSafeWindow) {
+            riskLevel = "CRITICAL";
+        } else if (remaining <= 60 || elapsedMinutes > (maxSafeWindow * 0.65)) {
+            riskLevel = "HIGH";
+        } else if (remaining <= 120 || elapsedMinutes > (maxSafeWindow * 0.40)) {
+            riskLevel = "MEDIUM";
+        } else {
+            riskLevel = "LOW";
+        }
+
         result.put("source", "HEURISTIC_RULE_FALLBACK");
-        result.put("safeMinutesRemaining", Math.max(30, 240 - elapsedMinutes));
-        result.put("riskLevel", elapsedMinutes > 150 ? "HIGH" : "LOW");
-        result.put("handlingAdvice", "Store in food-grade insulated containers and consume within safe window.");
+        result.put("safeMinutesRemaining", remaining);
+        result.put("recommendedSafeMinutesRemaining", remaining);
+        result.put("riskLevel", riskLevel);
+        result.put("foodSafetyRiskLevel", riskLevel);
+        result.put("temperatureCritical", tempCritical);
+        result.put("handlingAdvice", advice);
+        result.put("storageAdvice", advice);
         return result;
     }
 }

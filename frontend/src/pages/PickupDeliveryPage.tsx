@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PickupAssignment } from '../types';
 import { api } from '../services/api';
+import { AnimatedPageHeading } from '../components/AnimatedPageHeading';
 import {
   Truck,
   MapPin,
@@ -61,16 +62,17 @@ export const PickupDeliveryPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE9DE] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-extrabold text-[#087B46] uppercase tracking-wider">
+          <span className="text-xs font-extrabold text-[#367A50] uppercase tracking-wider">
             Volunteer Logistics Hub
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-            Pickup & Delivery Operations
-          </h1>
+          <AnimatedPageHeading
+            text="Pickup & Delivery Operations"
+            className="text-2xl sm:text-3xl font-extrabold text-[#20352A] mt-1"
+          />
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Track active missions, verify handover OTPs at provider kitchens, and confirm recipient arrivals across Hyderabad.
           </p>
@@ -78,7 +80,7 @@ export const PickupDeliveryPage: React.FC = () => {
 
         <button
           onClick={fetchPickups}
-          className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-2 self-start md:self-center"
+          className="px-4 py-2 rounded-2xl bg-[#F2F7F1] hover:bg-[#DCE9DE] text-[#24543B] text-xs font-bold transition flex items-center gap-2 self-start md:self-center border border-[#DCE9DE]"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh Queue</span>
@@ -86,14 +88,14 @@ export const PickupDeliveryPage: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 font-bold animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-[#F2F7F1] border border-[#79A786] text-[#163D2B] text-xs flex items-center gap-2 font-bold animate-box-rise">
+          <CheckCircle2 className="w-5 h-5 text-[#367A50] shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {actionError && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2 font-bold animate-in fade-in">
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2 font-bold animate-box-rise">
           <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
           <span>{actionError}</span>
         </div>
@@ -102,30 +104,34 @@ export const PickupDeliveryPage: React.FC = () => {
       {/* Pickups List */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-[#087B46]" />
+          <RefreshCw className="w-6 h-6 animate-spin text-[#367A50]" />
           <p className="text-xs font-medium">Loading active assignments...</p>
         </div>
       ) : pickups.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+        <div
+          className="bg-white rounded-3xl p-12 text-center border border-[#DCE9DE] space-y-3 animate-box-rise"
+          style={{ animationDelay: '260ms' }}
+        >
+          <div className="w-12 h-12 rounded-2xl bg-[#F2F7F1] text-[#367A50] flex items-center justify-center mx-auto border border-[#DCE9DE]">
             <Truck className="w-6 h-6" />
           </div>
-          <h3 className="font-extrabold text-slate-800 text-base">No active pickup assignments</h3>
+          <h3 className="font-extrabold text-[#20352A] text-base">No active pickup assignments</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             When surplus food listings are matched with recipient shelters, delivery missions will appear here for dispatch.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {pickups.map((pickup) => (
+          {pickups.map((pickup, index) => (
             <div
               key={pickup.id}
-              className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow"
+              className="bg-white rounded-3xl p-6 border border-[#DCE9DE] shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow animate-box-rise"
+              style={{ animationDelay: `${260 + index * 90}ms` }}
             >
               <div className="space-y-3">
                 {/* Header status */}
                 <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-[#087B46]">
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F2F7F1] text-[#24543B] border border-[#DCE9DE]">
                     {pickup.status.replace('_', ' ')}
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
