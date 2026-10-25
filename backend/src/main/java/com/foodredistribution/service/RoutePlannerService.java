@@ -32,13 +32,18 @@ public class RoutePlannerService {
             volUuid = UUID.fromString(volunteerId);
         } catch (Exception ignored) {}
 
-        List<PickupAssignment> assignments = (volUuid != null)
-                ? pickupAssignmentRepository.findByVolunteerId(volUuid)
-                : Collections.emptyList();
+        List<PickupAssignment> assignments = Collections.emptyList();
+        if (volUuid != null) {
+            assignments = pickupAssignmentRepository.findByVolunteerId(volUuid);
+        }
+        if (assignments.isEmpty()) {
+            assignments = pickupAssignmentRepository.findAll();
+        }
 
         // Filter active assignments (not yet delivered or failed)
         List<PickupAssignment> active = assignments.stream()
                 .filter(p -> p.getStatus() != PickupStatus.DELIVERED && p.getStatus() != PickupStatus.FAILED)
+                .limit(2)
                 .toList();
 
         // If no active assignments in db, create an illustrative multi-stop delivery mission in Hyderabad
