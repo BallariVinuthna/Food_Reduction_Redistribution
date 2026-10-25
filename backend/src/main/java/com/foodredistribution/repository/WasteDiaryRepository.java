@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface WasteDiaryRepository extends JpaRepository<WasteDiaryEntry, String> {
     List<WasteDiaryEntry> findByProviderIdOrderByEntryDateDesc(String providerId);
+    List<WasteDiaryEntry> findAllByOrderByEntryDateDesc();
     List<WasteDiaryEntry> findByEntryDateBetweenOrderByEntryDateDesc(LocalDate startDate, LocalDate endDate);
 }

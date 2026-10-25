@@ -152,6 +152,19 @@ public class NgoDemandRequest {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
+    // Frontend compatibility aliases
+    public String getMealDate() { return requestedDate != null ? requestedDate.toString() : null; }
+    public void setMealDate(String mealDate) {
+        if (mealDate != null && !mealDate.isBlank()) {
+            try {
+                this.requestedDate = LocalDate.parse(mealDate.split("T")[0]);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public String getSpecialInstructions() { return notes; }
+    public void setSpecialInstructions(String specialInstructions) { this.notes = specialInstructions; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

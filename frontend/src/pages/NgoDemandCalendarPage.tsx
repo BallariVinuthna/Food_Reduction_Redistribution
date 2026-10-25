@@ -37,13 +37,22 @@ export const NgoDemandCalendarPage: React.FC = () => {
     specialInstructions: 'Urgent need for children shelter distribution.'
   });
 
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
   const fetchDemands = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/demand/calendar');
       const json = await res.json();
       if (json.success && json.data) {
-        setDemands(json.data);
+        const mapped = json.data.map((d: any) => ({
+          ...d,
+          mealDate: d.mealDate || d.requestedDate || new Date().toISOString().split('T')[0],
+          specialInstructions: d.specialInstructions || d.notes || ''
+        }));
+        setDemands(mapped);
       }
     } catch (err) {
       console.error(err);
@@ -58,19 +67,48 @@ export const NgoDemandCalendarPage: React.FC = () => {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setModalError(null);
     try {
+      const payload = {
+        receiverId: 'rec-rha',
+        receiverName: formData.receiverName || 'Robin Hood Army - Jubilee Center',
+        requestedDate: formData.mealDate,
+        mealDate: formData.mealDate,
+        mealPeriod: formData.mealPeriod,
+        servingsRequired: Number(formData.servingsRequired) || 40,
+        peopleCount: Number(formData.servingsRequired) || 40,
+        dietaryPreference: formData.dietaryPreference,
+        foodCategory: formData.foodCategory || 'COOKED_MEALS',
+        notes: formData.specialInstructions,
+        specialInstructions: formData.specialInstructions,
+        status: 'OPEN',
+        unit: 'MEALS'
+      };
+
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/demand', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
       });
       const json = await res.json();
-      if (json.success) {
+      if (json.success || res.ok) {
         setShowModal(false);
+        setSuccessToast('NGO Demand Request posted successfully!');
+        setTimeout(() => setSuccessToast(null), 4000);
         fetchDemands();
+      } else {
+        setModalError(json.message || 'Failed to submit demand request.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setModalError(err.message || 'Network error occurred while submitting.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -92,6 +130,13 @@ export const NgoDemandCalendarPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {successToast && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2 shadow-xs animate-in fade-in">
+          <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span>{successToast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-[#DCE9DE]">
         <div>
@@ -251,6 +296,13 @@ export const NgoDemandCalendarPage: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Post NGO Meal Demand Request</h3>
 
+            {modalError && (
+              <div className="mb-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateRequest} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Organization / Shelter</label>
@@ -334,9 +386,10 @@ export const NgoDemandCalendarPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-[#367A50] hover:bg-[#24543B] text-white text-xs font-bold rounded-lg shadow-sm disabled:opacity-50 transition"
                 >
-                  Submit Scheduled Demand
+                  {submitting ? 'Submitting Demand...' : 'Submit Scheduled Demand'}
                 </button>
               </div>
             </form>

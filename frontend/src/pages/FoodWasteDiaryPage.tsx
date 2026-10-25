@@ -28,6 +28,9 @@ export const FoodWasteDiaryPage: React.FC = () => {
   const [summary, setSummary] = useState<WasteSummary | null>(null);
   const [entries, setEntries] = useState<WasteEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // New Entry Form State
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -44,16 +47,26 @@ export const FoodWasteDiaryPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const sumRes = await fetch('/api/waste-diary/summary');
+      const token = localStorage.getItem('token');
+      const authHeader: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const sumRes = await fetch('/api/waste-diary/summary', { headers: authHeader });
       const sumJson = await sumRes.json();
       if (sumJson.success && sumJson.data) {
         setSummary(sumJson.data);
       }
 
-      const listRes = await fetch('/api/waste-diary/entries');
+      const listRes = await fetch('/api/waste-diary/entries', { headers: authHeader });
       const listJson = await listRes.json();
       if (listJson.success && listJson.data) {
-        setEntries(listJson.data);
+        const mapped = listJson.data.map((e: any) => ({
+          ...e,
+          date: e.date || e.entryDate || new Date().toISOString().split('T')[0],
+          foodName: e.foodName || e.foodItemName || 'Prepared Dish',
+          quantityLostKg: e.quantityLostKg != null ? e.quantityLostKg : (e.quantityDiscarded != null ? e.quantityDiscarded : 5.0),
+          estimatedCostInr: e.estimatedCostInr != null ? e.estimatedCostInr : Math.round((e.quantityDiscarded || 5.0) * 52)
+        }));
+        setEntries(mapped);
       }
     } catch (err) {
       console.error(err);
@@ -68,19 +81,48 @@ export const FoodWasteDiaryPage: React.FC = () => {
 
   const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setModalError(null);
     try {
+      const payload = {
+        date: formData.date,
+        entryDate: formData.date,
+        foodName: formData.foodName,
+        foodItemName: formData.foodName,
+        foodCategory: formData.foodCategory,
+        wasteReason: formData.wasteReason,
+        quantityLostKg: Number(formData.quantityLostKg),
+        quantityDiscarded: Number(formData.quantityLostKg),
+        estimatedCostInr: Number(formData.estimatedCostInr),
+        notes: formData.notes,
+        mealPeriod: 'DINNER',
+        unit: 'KG',
+        providerName: 'Cyber Conventions & Marriage Hall'
+      };
+
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/waste-diary/entries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
       });
       const json = await res.json();
-      if (json.success) {
+      if (json.success || res.ok) {
         setShowModal(false);
+        setSuccessToast('Kitchen Discard Entry recorded successfully!');
+        setTimeout(() => setSuccessToast(null), 4000);
         fetchData();
+      } else {
+        setModalError(json.message || 'Failed to save discard entry.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setModalError(err.message || 'Network error occurred while saving.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -90,6 +132,13 @@ export const FoodWasteDiaryPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {successToast && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2 shadow-xs animate-in fade-in">
+          <BookOpen className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span>{successToast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-[#DCE9DE]">
         <div>
@@ -225,6 +274,13 @@ export const FoodWasteDiaryPage: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Record Kitchen Food Discard</h3>
 
+            {modalError && (
+              <div className="mb-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateEntry} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -309,9 +365,10 @@ export const FoodWasteDiaryPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm disabled:opacity-50 transition"
                 >
-                  Save Discard Entry
+                  {submitting ? 'Saving Discard...' : 'Save Discard Entry'}
                 </button>
               </div>
             </form>

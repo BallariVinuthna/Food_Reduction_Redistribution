@@ -123,6 +123,22 @@ public class WasteDiaryEntry {
     public String getUnit() { return unit; }
     public void setUnit(String unit) { this.unit = unit; }
 
+    @Column(name = "estimated_cost_inr")
+    private Double estimatedCostInr;
+
+    public Double getEstimatedCostInr() { return estimatedCostInr; }
+    public void setEstimatedCostInr(Double estimatedCostInr) { this.estimatedCostInr = estimatedCostInr; }
+
+    // Frontend compatibility aliases
+    public String getFoodName() { return foodItemName; }
+    public void setFoodName(String foodName) { this.foodItemName = foodName; }
+
+    public LocalDate getDate() { return entryDate; }
+    public void setDate(LocalDate date) { this.entryDate = date; }
+
+    public Double getQuantityLostKg() { return quantityDiscarded; }
+    public void setQuantityLostKg(Double quantityLostKg) { this.quantityDiscarded = quantityLostKg; }
+
     public String getWasteReason() { return wasteReason; }
     public void setWasteReason(String wasteReason) { this.wasteReason = wasteReason; }
 

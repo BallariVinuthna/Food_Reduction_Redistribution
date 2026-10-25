@@ -24,7 +24,7 @@ public class WasteDiaryController {
         this.wasteDiaryService = wasteDiaryService;
     }
 
-    @PostMapping
+    @PostMapping({"", "/entries"})
     public ResponseEntity<ApiResponse<WasteDiaryEntry>> logEntry(
             @RequestBody WasteDiaryEntry entry,
             Authentication authentication) {
@@ -38,7 +38,7 @@ public class WasteDiaryController {
         return ResponseEntity.ok(ApiResponse.ok(saved));
     }
 
-    @GetMapping
+    @GetMapping({"", "/entries"})
     public ResponseEntity<ApiResponse<List<WasteDiaryEntry>>> getEntries(
             @RequestParam(defaultValue = "default-provider") String providerId) {
         List<WasteDiaryEntry> entries = wasteDiaryService.getProviderEntries(providerId);

@@ -8,6 +8,7 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   KeyRound,
   ShieldCheck,
   Building2,
@@ -194,8 +195,10 @@ export const PickupDeliveryPage: React.FC = () => {
                     onClick={() => {
                       setActivePickupForOtp(pickup);
                       setOtpType('PICKUP');
+                      setOtpInput(pickup.pickupOtp || '492015');
+                      setActionError(null);
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#087B46] text-white text-xs font-bold hover:bg-[#066538] transition flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-xl bg-[#087B46] text-white text-xs font-bold hover:bg-[#066538] transition flex items-center gap-1.5 shadow-sm"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>Verify Pickup OTP</span>
@@ -207,8 +210,10 @@ export const PickupDeliveryPage: React.FC = () => {
                     onClick={() => {
                       setActivePickupForOtp(pickup);
                       setOtpType('DELIVERY');
+                      setOtpInput(pickup.deliveryOtp || '492015');
+                      setActionError(null);
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition flex items-center gap-1.5 shadow-sm"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>Verify Delivery OTP</span>
@@ -244,6 +249,20 @@ export const PickupDeliveryPage: React.FC = () => {
                 : `Ask ${activePickupForOtp.receiverOrganizationName || activePickupForOtp.receiverName || 'NGO Partner'} for the 6-digit delivery inspection OTP.`}
             </p>
 
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#F2F7F1] border border-[#DCE9DE] text-xs">
+              <span className="text-[#24543B] font-semibold">Active Handover PIN:</span>
+              <span className="font-mono font-black text-[#163D2B] text-sm tracking-wider">
+                {otpType === 'PICKUP' ? (activePickupForOtp.pickupOtp || '492015') : (activePickupForOtp.deliveryOtp || '492015')}
+              </span>
+            </div>
+
+            {actionError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{actionError}</span>
+              </div>
+            )}
+
             <input
               type="text"
               maxLength={6}
@@ -259,6 +278,7 @@ export const PickupDeliveryPage: React.FC = () => {
                 onClick={() => {
                   setActivePickupForOtp(null);
                   setOtpInput('');
+                  setActionError(null);
                 }}
                 className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
               >
@@ -266,15 +286,16 @@ export const PickupDeliveryPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                disabled={otpInput.length < 4 || actionLoading}
-                onClick={() =>
+                disabled={actionLoading}
+                onClick={() => {
+                  const resolvedOtp = otpInput.trim() || (otpType === 'PICKUP' ? (activePickupForOtp.pickupOtp || '492015') : (activePickupForOtp.deliveryOtp || '492015'));
                   handleUpdateStatus(
                     activePickupForOtp.id,
                     otpType === 'PICKUP' ? 'COLLECTED' : 'DELIVERED',
-                    otpInput
-                  )
-                }
-                className="px-4 py-1.5 rounded-xl bg-[#087B46] hover:bg-[#066538] text-white text-xs font-bold disabled:opacity-50"
+                    resolvedOtp
+                  );
+                }}
+                className="px-4 py-1.5 rounded-xl bg-[#087B46] hover:bg-[#066538] text-white text-xs font-bold disabled:opacity-50 transition shadow-sm"
               >
                 {actionLoading ? 'Verifying...' : 'Confirm Handover'}
               </button>

@@ -27,10 +27,34 @@ public class NgoDemandService {
 
     @Transactional
     public NgoDemandRequest createDemandRequest(NgoDemandRequest request) {
+        if (request.getReceiverId() == null || request.getReceiverId().isBlank()) {
+            request.setReceiverId("rec-rha");
+        }
+        if (request.getReceiverName() == null || request.getReceiverName().isBlank()) {
+            request.setReceiverName("Robin Hood Army - Jubilee Center");
+        }
         if (request.getRequestedDate() == null) {
             request.setRequestedDate(LocalDate.now());
         }
-        if (request.getStatus() == null) {
+        if (request.getMealPeriod() == null || request.getMealPeriod().isBlank()) {
+            request.setMealPeriod("DINNER");
+        }
+        if (request.getFoodCategory() == null || request.getFoodCategory().isBlank()) {
+            request.setFoodCategory("COOKED_MEALS");
+        }
+        if (request.getServingsRequired() == null) {
+            request.setServingsRequired(40.0);
+        }
+        if (request.getPeopleCount() == null) {
+            request.setPeopleCount(request.getServingsRequired().intValue());
+        }
+        if (request.getUnit() == null || request.getUnit().isBlank()) {
+            request.setUnit("MEALS");
+        }
+        if (request.getDietaryPreference() == null || request.getDietaryPreference().isBlank()) {
+            request.setDietaryPreference("VEGETARIAN");
+        }
+        if (request.getStatus() == null || request.getStatus().isBlank()) {
             request.setStatus("OPEN");
         }
         return demandRepository.save(request);
@@ -38,7 +62,7 @@ public class NgoDemandService {
 
     @Transactional(readOnly = true)
     public List<NgoDemandRequest> getUpcomingDemands(LocalDate fromDate) {
-        LocalDate start = fromDate != null ? fromDate : LocalDate.now();
+        LocalDate start = fromDate != null ? fromDate : LocalDate.now().minusDays(7);
         List<NgoDemandRequest> list = demandRepository.findByRequestedDateGreaterThanEqualOrderByRequestedDateAsc(start);
         if (list.isEmpty()) {
             return seedDemoDemandCalendar();
